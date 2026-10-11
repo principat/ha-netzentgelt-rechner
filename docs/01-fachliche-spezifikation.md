@@ -125,9 +125,12 @@ Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein E
 - **Über Mitternacht:** Ist die Endstunde kleiner als die Startstunde (z. B. 23 bis 5), gilt die Tarifzeit
   an jedem Tag des Datumsbereichs von der Startstunde bis Mitternacht und von Mitternacht bis zur Endstunde.
   Start- und Endstunde dürfen nicht gleich sein; 0 bis 24 bedeutet ganztägig.
-- **Keine Überschneidung:** Zwei Einträge dürfen sich weder im Datumsbereich noch in den Stunden
-  überschneiden (egal ob HT oder NT). Sonst wird der Eintrag mit einer verständlichen Meldung am betroffenen
-  Feld abgelehnt und nicht gespeichert.
+- **Mehrere Tarifzeiten pro Tag sind erlaubt:** Datumsbereiche dürfen sich überschneiden, so lassen sich für
+  denselben Tag mehrere HT- und NT-Zeiten festlegen (z. B. NT 23–5 Uhr, HT 11–13 Uhr und HT 17–19 Uhr, alle
+  ganzjährig). **Nicht erlaubt** ist nur, dass an einem Tag dieselbe Stunde in zwei Einträgen liegt (egal ob
+  HT oder NT). Nur dann wird der Eintrag mit einer verständlichen Meldung, die den Konflikt nennt, am
+  betroffenen Feld abgelehnt und nicht gespeichert. Gleiche Stunden an verschiedenen Tagen (disjunkte
+  Datumsbereiche) und angrenzende Stunden (z. B. 11–13 und 13–15) sind kein Konflikt.
 - **Eingabe:** im Optionsdialog der Integration als Liste: Eintrag hinzufügen, bearbeiten, löschen. Der
   Dialog zeigt die aktuelle Liste. Intern wird bei Bedarf eine vollständige Zeittabelle (Datum × Stunde →
   Stufe) aufgebaut; der Nutzer sieht sie nie.
@@ -226,7 +229,7 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
 - **AK-13** Tarifzeiten lassen sich im Optionsdialog hinzufügen, bearbeiten und löschen. Die Änderung wirkt
   sofort auf den Netzentgelt-Sensor, löst **keine** Neuberechnung aus und übersteht einen HA-Neustart.
 - **AK-14** Ungültige Tarifzeiten (Enddatum vor Startdatum, Start- gleich Endstunde, Stunden außerhalb des
-  Bereichs, Überschneidung mit einem anderen Eintrag) werden mit lokalisierter Meldung am betroffenen Feld
+  Bereichs, gleiche Stunde am selben Tag wie in einem anderen Eintrag) werden mit lokalisierter Meldung am betroffenen Feld
   abgelehnt; nichts wird gespeichert, die Integration bleibt stabil.
 - **AK-15** Tarifzeiten über Mitternacht (z. B. 23–5 Uhr) und ganztägige (0–24 Uhr) werden korrekt angewendet;
   alle Zeiten ohne Tarifzeit sind Standardstufe.
