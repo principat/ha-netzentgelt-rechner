@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -18,6 +18,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
+from custom_components.netzentgelt_rechner.calc import day_stages
 from custom_components.netzentgelt_rechner.const import DOMAIN
 from custom_components.netzentgelt_rechner.data import async_load_statistics as load_statistics
 from custom_components.netzentgelt_rechner.data import period
@@ -222,7 +223,8 @@ async def test_monthly_run_only_on_first_day(hass, entry, hass_storage):  # AK-9
         assert calculate.call_count == 1  # not on other days
 
 
-async def test_persistence_of_inputs_and_results(hass, entry, hass_storage):  # AK-10
+async def test_persistence_of_inputs_and_results(hass, entry, hass_storage, freezer):  # AK-10
+    freezer.move_to(datetime(2026, 10, 1, 12, 0, tzinfo=BERLIN))
     results = {"basis": {"tage": 300}, "szenarien": {}, "berechnet_am": "2026-10-01T03:30:00"}
     hass_storage[f"{DOMAIN}.test_entry"] = stored(
         results,
@@ -234,8 +236,9 @@ async def test_persistence_of_inputs_and_results(hass, entry, hass_storage):  # 
     hub: Hub = entry.runtime_data
     assert hub.params["nt"] == 5.0
     assert hub.params["ht"] == 16.07  # invalid stored value ignored
-    assert hub.windows["Q2"] == "H" * 24
-    assert hub.windows["Q3"] == "NNNNNSSSSSSHHSSSSHHSSSSN"
+    # v1.0.0 quarterly windows are converted (AK-17); the invalid Q3 falls back to the default
+    assert day_stages(hub.windows, date(2026, 5, 5)) == "H" * 24
+    assert day_stages(hub.windows, date(2026, 8, 5)) == "NNNNNSSSSSSHHSSSSHHSSSSN"
     assert hub.status == "fertig"
     state = hass.states.get(unique_entity_id(hass, "sensor", "wirtschaftlichkeit"))
     assert state.state == "fertig"

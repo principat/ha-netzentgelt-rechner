@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, tzinfo
 
-from .fees import price, quarter_of, stage
+from .fees import TariffWindow, day_stages, price, project_day, quarter_of, stage
 from .models import CalcError, Hour, Params, Result, ScenarioResult
 
 SCENARIOS = ("modul3", "dynamisch", "kombination")
@@ -15,16 +15,8 @@ MIN_DAYS = 200
 _MIN_IMPORT_KWH = 0.5
 
 
-def import_price(
-    scenario: str,
-    p: Params,
-    windows: Mapping[str, str],
-    quarter: str,
-    hour: int,
-    spot: float,
-) -> float:
-    """Gross price per imported kWh in EUR (docs/01 §4)."""
-    netz = price(stage(windows, quarter, hour), quarter, p)
+def _scenario_price(scenario: str, p: Params, netz: float, spot: float) -> float:
+    """Gross price per imported kWh in EUR for a given grid fee ``netz`` (docs/01 §4)."""
     if scenario == "heute":
         return p.fixed
     if scenario == "modul3":
@@ -35,6 +27,19 @@ def import_price(
     if scenario == "kombination":
         return (spot + p.markup) * p.vat + netz + p.levies
     raise ValueError(f"unknown scenario: {scenario!r}")
+
+
+def import_price(
+    scenario: str,
+    p: Params,
+    windows: Sequence[TariffWindow],
+    day: date,
+    hour: int,
+    spot: float,
+) -> float:
+    """Gross price per imported kWh in EUR for a local date and hour (docs/01 §4)."""
+    netz = price(stage(windows, day, hour), quarter_of(day), p)
+    return _scenario_price(scenario, p, netz, spot)
 
 
 def _finite(value: float | None) -> float | None:
@@ -109,13 +114,15 @@ def dp_day(
 def evaluate(
     days: Mapping[date, Sequence[Hour]],
     p: Params,
-    windows: Mapping[str, str],
+    windows: Sequence[TariffWindow],
     *,
+    ref_year: int,
     pause: Callable[[], None] | None = None,
     min_days: int = MIN_DAYS,
 ) -> Result:
     """Savings per scenario in EUR/year against today's fixed price.
 
+    Tariff windows are applied by day and month only: every day is mapped to ``ref_year`` (AK-16).
     ``pause`` is called after every optimisation (and every day) so that the caller can yield
     the CPU or cancel (by raising) a long run.
     """
@@ -126,14 +133,17 @@ def evaluate(
         )
     acc: dict[str, float] = defaultdict(float)
     for day, hrs in days.items():
-        quarter = quarter_of(day)
+        proj = project_day(day, ref_year)
+        quarter = quarter_of(proj)
+        stages = day_stages(windows, proj)
+        netz = [price(stages[x.h], quarter, p) for x in hrs]
         imp = [x.imp for x in hrs]
         exp = [x.exp for x in hrs]
         acc["imp"] += sum(imp)
         acc["exp"] += sum(exp)
         fi = [p.feedin if x.spot >= 0 else 0.0 for x in hrs]
         for s in SCENARIOS:
-            cb = [import_price(s, p, windows, quarter, x.h, x.spot) for x in hrs]
+            cb = [_scenario_price(s, p, n, x.spot) for n, x in zip(netz, hrs, strict=True)]
             acc[s + "_pass"] += sum(i * (p.fixed - c) for i, c in zip(imp, cb, strict=True))
             if sum(imp) > _MIN_IMPORT_KWH:
                 acc[s + "_flex"] += -dp_day(cb, fi, imp, exp, p.flex_kwh, p)

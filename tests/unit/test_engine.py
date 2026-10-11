@@ -17,6 +17,7 @@ from custom_components.netzentgelt_rechner.calc import (
 )
 
 BERLIN = ZoneInfo("Europe/Berlin")
+DAY = date(2026, 1, 15)  # Q1 -> default windows
 
 
 def _hours(spot: float = 0.1, imp: float = 1.0, exp: float = 0.0, n: int = 24) -> list[Hour]:
@@ -33,30 +34,30 @@ def _year(day_hours: list[Hour], n_days: int = 10) -> dict[date, list[Hour]]:
 def test_import_price_formulas(params, windows):  # AK-5
     # Q1, hour 0 -> N (0.0441), hour 11 -> H (0.1607); spot 0.10, markup 0.02, vat 1.19
     e_fix = 0.341 - 0.1106 - 0.088
-    assert import_price("heute", params, windows, "Q1", 0, 0.10) == pytest.approx(0.341)
-    assert import_price("modul3", params, windows, "Q1", 0, 0.10) == pytest.approx(
+    assert import_price("heute", params, windows, DAY, 0, 0.10) == pytest.approx(0.341)
+    assert import_price("modul3", params, windows, DAY, 0, 0.10) == pytest.approx(
         e_fix + 0.0441 + 0.088
     )
-    assert import_price("modul3", params, windows, "Q1", 11, 0.10) == pytest.approx(
+    assert import_price("modul3", params, windows, DAY, 11, 0.10) == pytest.approx(
         e_fix + 0.1607 + 0.088
     )
-    assert import_price("dynamisch", params, windows, "Q1", 11, 0.10) == pytest.approx(
+    assert import_price("dynamisch", params, windows, DAY, 11, 0.10) == pytest.approx(
         (0.10 + 0.02) * 1.19 + 0.1106 + 0.088
     )
-    assert import_price("kombination", params, windows, "Q1", 11, 0.10) == pytest.approx(
+    assert import_price("kombination", params, windows, DAY, 11, 0.10) == pytest.approx(
         (0.10 + 0.02) * 1.19 + 0.1607 + 0.088
     )
 
 
 def test_negative_spot_is_passed_through(params, windows):
-    low = import_price("kombination", params, windows, "Q1", 12, -0.20)
+    low = import_price("kombination", params, windows, DAY, 12, -0.20)
     assert low == pytest.approx((-0.20 + 0.02) * 1.19 + 0.1607 + 0.088)
     assert low > 0  # grid fee and levies stay positive
 
 
 def test_unknown_scenario(params, windows):
     with pytest.raises(ValueError):
-        import_price("nope", params, windows, "Q1", 0, 0.1)
+        import_price("nope", params, windows, DAY, 0, 0.1)
 
 
 # --- build_days ------------------------------------------------------------------------
@@ -143,14 +144,12 @@ def test_dp_wear_makes_trading_unprofitable(params):
 
 def test_evaluate_flat_day_has_no_storage_gain(params, windows):  # AK-5
     # constant spot, import every hour: modul1 only the rebate, passive savings by formula
-    result = evaluate(_year(_hours(spot=0.10)), params, windows, min_days=5)
+    result = evaluate(_year(_hours(spot=0.10)), params, windows, ref_year=2026, min_days=5)
     assert result.tage == 10
     assert result.modul1 == pytest.approx(162.91)
     assert result.bezug_kwh == pytest.approx(24 * 365.0)
     k = result.szenarien["kombination"]
-    stages_cost = sum(
-        import_price("kombination", params, windows, "Q1", h, 0.10) for h in range(24)
-    )
+    stages_cost = sum(import_price("kombination", params, windows, DAY, h, 0.10) for h in range(24))
     expected = (24 * params.fixed - stages_cost) * 365 + params.rebate - params.dyn_base
     assert k.passiv == pytest.approx(expected)
     assert k.speicher >= k.passiv - 1e-9
@@ -158,7 +157,7 @@ def test_evaluate_flat_day_has_no_storage_gain(params, windows):  # AK-5
 
 def test_evaluate_scenario_ordering_and_amortisation(params, windows):  # invariants
     day = [Hour(h, 1.0, 0.0, 0.02 if h < 6 else 0.30) for h in range(24)]
-    result = evaluate(_year(day), params, windows, min_days=5)
+    result = evaluate(_year(day), params, windows, ref_year=2026, min_days=5)
     for s in result.szenarien.values():
         assert s.speicher >= s.passiv
         assert s.erweiterung >= s.speicher - 1e-9
@@ -169,7 +168,9 @@ def test_evaluate_scenario_ordering_and_amortisation(params, windows):  # invari
 
 
 def test_evaluate_no_amortisation_without_gain(params, windows):
-    result = evaluate(_year(_hours(imp=0.0)), params, windows, min_days=5)  # no import at all
+    result = evaluate(
+        _year(_hours(imp=0.0)), params, windows, ref_year=2026, min_days=5
+    )  # no import at all
     for s in result.szenarien.values():
         assert s.mehrwert == 0.0
         assert s.amortisation_jahre is None
@@ -177,7 +178,7 @@ def test_evaluate_no_amortisation_without_gain(params, windows):
 
 def test_evaluate_requires_enough_days(params, windows):  # AK-8
     with pytest.raises(CalcError, match="199"):
-        evaluate(_year(_hours(), 199), params, windows)
+        evaluate(_year(_hours(), 199), params, windows, ref_year=2026)
 
 
 def test_evaluate_calls_pause_and_can_cancel(params, windows):  # AK-7
@@ -186,7 +187,7 @@ def test_evaluate_calls_pause_and_can_cancel(params, windows):  # AK-7
     def pause() -> None:
         calls.append(1)
 
-    evaluate(_year(_hours(), 6), params, windows, pause=pause, min_days=5)
+    evaluate(_year(_hours(), 6), params, windows, ref_year=2026, pause=pause, min_days=5)
     assert len(calls) == 6 * (1 + 3 * 2)  # per day: one per optimisation and one at the end
 
     class Cancelled(Exception):
@@ -196,11 +197,13 @@ def test_evaluate_calls_pause_and_can_cancel(params, windows):  # AK-7
         raise Cancelled
 
     with pytest.raises(Cancelled):
-        evaluate(_year(_hours(), 6), params, windows, pause=cancel, min_days=5)
+        evaluate(_year(_hours(), 6), params, windows, ref_year=2026, pause=cancel, min_days=5)
 
 
 def test_result_to_dict_rounds(params, windows):  # docs/02 §4.2
-    out = evaluate(_year(_hours(spot=0.1234567)), params, windows, min_days=5).to_dict()
+    out = evaluate(
+        _year(_hours(spot=0.1234567)), params, windows, ref_year=2026, min_days=5
+    ).to_dict()
     assert set(out["szenarien"]) == {"modul1", "modul3", "dynamisch", "kombination"}
     assert out["szenarien"]["modul1"] == {"passiv": 162.91}
     assert out["szenarien"]["dynamisch"]["amortisation_jahre"] is None  # flat spot, no arbitrage

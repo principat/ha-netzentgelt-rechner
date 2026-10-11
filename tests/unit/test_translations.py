@@ -37,13 +37,22 @@ def test_de_en_strings_have_identical_keys():  # AK-12
 def test_no_unquoted_braces_or_markdown_in_plain_text(name):  # AK-12
     for path, text in _flatten(_load(name)).items():
         stripped = re.sub(r"'[{}]'", "", text)  # ICU: literal braces are quote-escaped
+        stripped = re.sub(r"\{[a-z_]+\}", "", stripped)  # real placeholders, e.g. {windows}
         assert "{" not in stripped and "}" not in stripped, path
         assert "**" not in text and "](" not in text, path
 
 
-def test_flow_error_keys_are_translated():  # AK-11
+def test_flow_error_keys_are_translated():  # AK-11, AK-14
     source = (DIR / "config_flow.py").read_text(encoding="utf-8")
-    keys = set(re.findall(r'"(entity_not_found)"', source))
-    de = _flatten(_load("translations/de.json"))
-    for key in keys:
-        assert f"config.error.{key}" in de and f"options.error.{key}" in de
+    keys = set(
+        re.findall(
+            r'"(entity_not_found|window_(?:stage|date_order|hour_range|hours_equal|overlap))"',
+            source,
+        )
+    )
+    assert {"entity_not_found", "window_overlap"} <= keys
+    for name in FILES:
+        texts = _flatten(_load(name))
+        for key in keys:
+            assert f"options.error.{key}" in texts, (name, key)
+        assert "config.error.entity_not_found" in texts

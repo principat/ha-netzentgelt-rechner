@@ -60,7 +60,11 @@ async def test_options_flow_changes_sources(hass: HomeAssistant, entry):  # AK-1
     _states(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    result = await hass.config_entries.options.async_init(entry.entry_id)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    assert menu["type"] is FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "sources"}
+    )
     assert result["type"] is FlowResultType.FORM
     bad = await hass.config_entries.options.async_configure(
         result["flow_id"],

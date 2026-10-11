@@ -12,7 +12,7 @@ import threading
 import time
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -20,7 +20,12 @@ import pytest
 from data_gen import synthetic_year
 from ha_client import HA
 
-from custom_components.netzentgelt_rechner.calc import Params, build_days, evaluate
+from custom_components.netzentgelt_rechner.calc import (
+    Params,
+    TariffWindow,
+    build_days,
+    evaluate,
+)
 from custom_components.netzentgelt_rechner.const import DOMAIN, NUMBER_PARAMS
 
 pytestmark = pytest.mark.e2e
@@ -47,6 +52,49 @@ def _period() -> tuple[Any, Any]:
     today = datetime.now(BERLIN).date()
     end = today.replace(day=1)
     return end.replace(year=end.year - 1), end
+
+
+def windows_of(ha: HA, ids: dict[str, str]) -> list[TariffWindow]:
+    """The tariff windows as the integration reports them on the grid-fee sensor."""
+    letters = {"Niedertarif": "N", "Hochtarif": "H"}
+    return [
+        TariffWindow(
+            letters[w["stufe"]],
+            date.fromisoformat(w["von"]),
+            date.fromisoformat(w["bis"]),
+            w["stunde_von"],
+            w["stunde_bis"],
+        )
+        for w in ha.state(ids["netzentgelt"])["attributes"]["zeitplan"]
+    ]
+
+
+def add_window(ha: HA, stage: str, start: str, end: str, from_hour: int, to_hour: int) -> None:
+    """Add a tariff window through the options flow REST API; clears overlapping defaults first."""
+    (entries,) = ha.ws_commands([{"type": "config_entries/get", "domain": DOMAIN}])
+    flow = ha.request(
+        "POST", "/api/config/config_entries/options/flow", {"handler": entries[0]["entry_id"]}
+    )
+    base = f"/api/config/config_entries/options/flow/{flow['flow_id']}"
+    delete = ha.request("POST", base, {"next_step_id": "window_delete"})
+    field = delete["data_schema"][0]
+    options = [o["value"] for o in field["selector"]["select"]["options"]]
+    ha.request("POST", base, {"windows": options})  # back at the menu
+    form = ha.request("POST", base, {"next_step_id": "window_add"})
+    assert form["type"] == "form", form
+    result = ha.request(
+        "POST",
+        base,
+        {
+            "stage": stage,
+            "start_date": start,
+            "end_date": end,
+            "from_hour": from_hour,
+            "to_hour": to_hour,
+        },
+    )
+    assert result["type"] == "menu", result  # saved, back at the list
+    ha.request("DELETE", base)  # close the dialog
 
 
 def _meter(series: dict[datetime, float]) -> list[dict[str, Any]]:
@@ -166,7 +214,7 @@ def test_e2e_1_happy_path_and_restart(ha: HA, ids: dict[str, str]):  # AK-1, AK-
         [{"type": "config/entity_registry/list"}, {"type": "config/device_registry/list"}]
     )
     ours = [e for e in registry if e["platform"] == DOMAIN]
-    assert len(ours) == 2 + len(NUMBER_PARAMS) + 4 + 1
+    assert len(ours) == 2 + len(NUMBER_PARAMS) + 1
     assert len({e["device_id"] for e in ours}) == 1
     assert [d["name"] for d in devices if d["id"] == ours[0]["device_id"]] == [
         "Netzentgelt-Rechner"
@@ -174,12 +222,13 @@ def test_e2e_1_happy_path_and_restart(ha: HA, ids: dict[str, str]):  # AK-1, AK-
 
     # AK-5: equals the pure calculation on the same data
     days = build_days(data["imp"], data["exp"], data["spot"], BERLIN)
-    windows = {
-        key.upper()[-2:]: ha.state(ids[key])["state"]
-        for key in ids
-        if key.startswith("zeitfenster_")
-    }
-    expected = evaluate(days, Params.from_ui(ui_params(ha, ids)), windows).to_dict()
+    windows = windows_of(ha, ids)
+    expected = evaluate(
+        days,
+        Params.from_ui(ui_params(ha, ids)),
+        windows,
+        ref_year=datetime.now(BERLIN).year,
+    ).to_dict()
     attrs = state["attributes"]
     assert attrs["basis"]["tage"] == expected["basis"]["tage"]
     for scenario, values in expected["szenarien"].items():
@@ -205,10 +254,13 @@ def test_e2e_2_change_input(ha: HA, ids: dict[str, str]):  # AK-2
     before = ha.state(ids["wirtschaftlichkeit"])
     ha.call("number", "set_value", entity_id=ids["rebate"], value=300)
     ha.call("number", "set_value", entity_id=ids["nt"], value=2.5)
-    ha.call("text", "set_value", entity_id=ids["zeitfenster_q4"], value="N" * 24)
+    add_window(ha, "N", "2026-01-01", "2026-12-31", 0, 24)  # AK-13, via the options dialog
     fee = ha.state(ids["netzentgelt"])
     assert fee["attributes"]["preise"]["nt"] == 2.5
-    assert fee["attributes"]["zeitplan"]["Q4"] == "N" * 24
+    assert any(
+        w["stufe"] == "Niedertarif" and (w["stunde_von"], w["stunde_bis"]) == (0, 24)
+        for w in fee["attributes"]["zeitplan"]
+    )
     unchanged = ha.state(ids["wirtschaftlichkeit"])
     assert unchanged["attributes"]["berechnet_am"] == before["attributes"]["berechnet_am"]
     with pytest.raises(urllib.error.HTTPError):

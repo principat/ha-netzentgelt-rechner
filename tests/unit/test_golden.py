@@ -31,7 +31,7 @@ def test_golden_year(request, params, windows):  # AK-5
     imp, exp, spot = synthetic_year(date(2025, 10, 1), 365, BERLIN)
     days = build_days(imp, exp, spot, BERLIN)
     assert len(days) == 365
-    actual = evaluate(days, params, windows).to_dict()
+    actual = evaluate(days, params, windows, ref_year=2026).to_dict()
     if request.config.getoption("--update-golden"):
         GOLDEN.parent.mkdir(exist_ok=True)
         GOLDEN.write_text(json.dumps(actual, indent=2, sort_keys=True) + "\n", encoding="utf-8")

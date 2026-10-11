@@ -29,7 +29,6 @@ from .const import (
     DEFAULT_WINDOW,
     DOMAIN,
     NUMBER_PARAMS,
-    QUARTERS,
     SIGNAL_UPDATE,
     STAGE_NAMES,
     STATUS_DONE,
@@ -62,7 +61,7 @@ class Hub:
             hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
         self.params: dict[str, float] = {k: v[5] for k, v in NUMBER_PARAMS.items()}
-        self.windows: dict[str, str] = dict.fromkeys(QUARTERS, DEFAULT_WINDOW)
+        self.windows: list[calc.TariffWindow] = calc.default_windows(dt_util.now().year)
         self.results: dict[str, Any] | None = None
         self.status = STATUS_NONE
         self.error: str | None = None
@@ -93,13 +92,9 @@ class Hub:
         for key, value in (stored.get("params") or {}).items():
             if key in self.params and isinstance(value, int | float):
                 self.params[key] = float(value)
-        for quarter, value in (stored.get("windows") or {}).items():
-            if quarter in self.windows:
-                try:
-                    calc.validate_windows({**self.windows, quarter: value})
-                except ValueError:
-                    continue
-                self.windows[quarter] = value
+        windows = self._parse_windows(stored.get("windows"))
+        if windows is not None:
+            self.windows = windows
         self.results = stored.get("results")
         self.error = stored.get("error")
         status = stored.get("status", STATUS_NONE)
@@ -107,10 +102,30 @@ class Hub:
             status = STATUS_DONE if self.results else STATUS_NONE
         self.status = status
 
+    @staticmethod
+    def _parse_windows(raw: Any) -> list[calc.TariffWindow] | None:
+        """Stored windows (list) or v1.0.0 quarterly windows (dict, AK-17); None if unusable."""
+        try:
+            if isinstance(raw, dict):
+                quarters: dict[str, str] = {}
+                for q in calc.QUARTERS:
+                    text = raw.get(q)
+                    ok = isinstance(text, str) and len(text) == 24 and set(text) <= set("NSH")
+                    quarters[q] = text if isinstance(text, str) and ok else DEFAULT_WINDOW
+                windows = calc.windows_from_quarters(quarters, dt_util.now().year)
+            elif isinstance(raw, list):
+                windows = [calc.TariffWindow.from_dict(w) for w in raw]
+            else:
+                return None
+            calc.validate_windows(windows)
+        except ValueError:  # includes WindowError
+            return None
+        return windows
+
     def _snapshot(self) -> dict[str, Any]:
         return {
             "params": self.params,
-            "windows": self.windows,
+            "windows": [w.to_dict() for w in self.windows],
             "results": self.results,
             "status": self.status,
             "error": self.error,
@@ -141,16 +156,13 @@ class Hub:
         self._notify()
 
     @callback
-    def async_set_window(self, quarter: str, value: str) -> None:
-        if quarter not in self.windows:
-            raise ServiceValidationError(f"Unbekanntes Quartal: {quarter}")
-        try:
-            calc.validate_windows({**self.windows, quarter: value})
-        except ValueError as err:
-            raise ServiceValidationError(
-                f"Zeitfenster {quarter} muss aus 24 Zeichen N, S oder H bestehen"
-            ) from err
-        self.windows[quarter] = value
+    def async_set_windows(self, windows: list[calc.TariffWindow]) -> None:
+        """Replace the tariff windows (AK-13); raises calc.WindowError if invalid (AK-14).
+
+        Updates the grid-fee sensor immediately; no recalculation is triggered.
+        """
+        calc.validate_windows(windows)
+        self.windows = list(windows)
         self._schedule_save()
         self._notify()
 
@@ -172,7 +184,7 @@ class Hub:
                 "st": self.params["st"],
                 "ht": self.params["ht"],
             },
-            "zeitplan": dict(self.windows),
+            "zeitplan": [{**w.to_dict(), "stufe": STAGE_NAMES[w.stage]} for w in self.windows],
             "data": [
                 {
                     "start_time": s.start.isoformat(),
@@ -222,7 +234,8 @@ class Hub:
         import_id, export_id, price_id = self.sources
         params_ui = dict(self.params)
         params = calc.Params.from_ui(params_ui)
-        windows = dict(self.windows)
+        windows = list(self.windows)
+        ref_year = today.year
         imp, exp, spot = await async_load_statistics(
             self.hass, import_id, export_id, price_id, start_utc, end_utc
         )
@@ -236,7 +249,7 @@ class Hub:
 
         def work() -> calc.Result:
             days = calc.build_days(imp, exp, spot, tz)
-            return calc.evaluate(days, params, windows, pause=pause)
+            return calc.evaluate(days, params, windows, ref_year=ref_year, pause=pause)
 
         try:
             async with asyncio.timeout(TIMEOUT_S):
@@ -250,7 +263,7 @@ class Hub:
             berechnet_am=dt_util.now().isoformat(),
             dauer_s=round(time.monotonic() - started, 1),
             annahmen=params_ui,
-            zeitfenster=windows,
+            tarifzeiten=[w.to_dict() for w in windows],
         )
         _LOGGER.debug("Berechnung fertig in %.1f s (%d Tage)", attrs["dauer_s"], result.tage)
         return attrs

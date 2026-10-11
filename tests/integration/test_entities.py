@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -11,6 +11,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
+from custom_components.netzentgelt_rechner.calc import TariffWindow
 from custom_components.netzentgelt_rechner.const import NUMBER_PARAMS
 
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -27,7 +28,6 @@ async def test_setup_creates_all_entities_under_one_device(hass: HomeAssistant, 
     assert by_platform == {
         "sensor": 2,
         "number": len(NUMBER_PARAMS),
-        "text": 4,
         "button": 1,
     }
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
@@ -55,17 +55,6 @@ async def test_number_range_is_validated(hass: HomeAssistant, entry):  # AK-2
     assert float(hass.states.get(entity_id).state) == pytest.approx(4.41)
 
 
-async def test_text_pattern_is_validated(hass: HomeAssistant, entry):  # AK-2
-    await setup_entry(hass, entry)
-    entity_id = unique_entity_id(hass, "text", "zeitfenster_q1")
-    for bad in ("N" * 23, "X" * 24, "n" * 24):
-        with pytest.raises((HomeAssistantError, ValueError)):
-            await hass.services.async_call(
-                "text", "set_value", {"entity_id": entity_id, "value": bad}, blocking=True
-            )
-    assert hass.states.get(entity_id).state == "NNNNNSSSSSSHHSSSSHHSSSSN"
-
-
 async def test_input_updates_fee_sensor_without_recalculation(hass: HomeAssistant, entry):  # AK-2
     await setup_entry(hass, entry)
     fee = unique_entity_id(hass, "sensor", "netzentgelt")
@@ -77,16 +66,19 @@ async def test_input_updates_fee_sensor_without_recalculation(hass: HomeAssistan
         {"entity_id": unique_entity_id(hass, "number", "nt"), "value": 5.5},
         blocking=True,
     )
-    await hass.services.async_call(
-        "text",
-        "set_value",
-        {"entity_id": unique_entity_id(hass, "text", "zeitfenster_q4"), "value": "N" * 24},
-        blocking=True,
-    )
+    hub.async_set_windows([TariffWindow("N", date(2026, 1, 1), date(2026, 12, 31), 0, 24)])  # AK-13
     await hass.async_block_till_done()
     attrs = hass.states.get(fee).attributes
     assert attrs["preise"]["nt"] == 5.5
-    assert attrs["zeitplan"]["Q4"] == "N" * 24
+    assert attrs["zeitplan"] == [
+        {
+            "stufe": "Niedertarif",
+            "von": "2026-01-01",
+            "bis": "2026-12-31",
+            "stunde_von": 0,
+            "stunde_bis": 24,
+        }
+    ]
     assert hub.status == before_status  # no automatic recalculation
     assert hub.results is None
 

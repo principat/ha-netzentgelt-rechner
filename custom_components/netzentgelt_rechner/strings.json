@@ -21,16 +21,73 @@
   "options": {
     "step": {
       "init": {
+        "title": "Einstellungen",
+        "description": "Aktuelle Tarifzeiten (HT = Hochtarif, NT = Niedertarif; alle übrigen Zeiten gelten als Standardstufe):\n\n{windows}",
+        "menu_options": {
+          "sources": "Quellsensoren ändern",
+          "window_add": "Tarifzeit hinzufügen",
+          "window_edit": "Tarifzeit bearbeiten",
+          "window_delete": "Tarifzeiten löschen"
+        }
+      },
+      "sources": {
         "title": "Quellsensoren",
         "data": {
           "import_entity": "Zählerstand Bezug",
           "export_entity": "Zählerstand Einspeisung",
           "price_entity": "Strompreis-Verlauf"
         }
+      },
+      "window_add": {
+        "title": "Tarifzeit hinzufügen",
+        "description": "Die Tarifzeit gilt an jedem Tag zwischen Start- und Enddatum (beide eingeschlossen) in den angegebenen Stunden.",
+        "data": {
+          "stage": "Stufe",
+          "start_date": "Startdatum",
+          "end_date": "Enddatum",
+          "from_hour": "Startstunde",
+          "to_hour": "Endstunde"
+        },
+        "data_description": {
+          "from_hour": "Volle Stunde, ab der die Tarifzeit gilt (0–23).",
+          "to_hour": "Volle Stunde, bis zu der sie gilt, ausschließlich (1–24). Ist sie kleiner als die Startstunde, gilt die Tarifzeit über Mitternacht (z. B. 23 bis 5)."
+        }
+      },
+      "window_edit": {
+        "title": "Tarifzeit bearbeiten",
+        "data": {
+          "window": "Tarifzeit"
+        }
+      },
+      "window_edit_form": {
+        "title": "Tarifzeit bearbeiten",
+        "description": "Die Tarifzeit gilt an jedem Tag zwischen Start- und Enddatum (beide eingeschlossen) in den angegebenen Stunden.",
+        "data": {
+          "stage": "Stufe",
+          "start_date": "Startdatum",
+          "end_date": "Enddatum",
+          "from_hour": "Startstunde",
+          "to_hour": "Endstunde"
+        },
+        "data_description": {
+          "from_hour": "Volle Stunde, ab der die Tarifzeit gilt (0–23).",
+          "to_hour": "Volle Stunde, bis zu der sie gilt, ausschließlich (1–24). Ist sie kleiner als die Startstunde, gilt die Tarifzeit über Mitternacht (z. B. 23 bis 5)."
+        }
+      },
+      "window_delete": {
+        "title": "Tarifzeiten löschen",
+        "data": {
+          "windows": "Zu löschende Tarifzeiten"
+        }
       }
     },
     "error": {
-      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik)."
+      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik).",
+      "window_stage": "Ungültige Stufe.",
+      "window_date_order": "Das Enddatum darf nicht vor dem Startdatum liegen.",
+      "window_hour_range": "Stunden außerhalb des erlaubten Bereichs (Start 0–23, Ende 1–24).",
+      "window_hours_equal": "Start- und Endstunde dürfen nicht gleich sein.",
+      "window_overlap": "Überschneidet sich mit: {conflict}"
     }
   },
   "entity": {
@@ -101,23 +158,17 @@
         "name": "Kosten der Speichererweiterung"
       }
     },
-    "text": {
-      "zeitfenster_q1": {
-        "name": "Zeitfenster Q1"
-      },
-      "zeitfenster_q2": {
-        "name": "Zeitfenster Q2"
-      },
-      "zeitfenster_q3": {
-        "name": "Zeitfenster Q3"
-      },
-      "zeitfenster_q4": {
-        "name": "Zeitfenster Q4"
-      }
-    },
     "button": {
       "neu_berechnen": {
         "name": "Neu berechnen"
+      }
+    }
+  },
+  "selector": {
+    "stage": {
+      "options": {
+        "N": "Niedertarif (NT)",
+        "H": "Hochtarif (HT)"
       }
     }
   }

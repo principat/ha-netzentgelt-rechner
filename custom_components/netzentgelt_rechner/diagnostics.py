@@ -17,7 +17,7 @@ async def async_get_config_entry_diagnostics(
     return {
         "sources": list(hub.sources),
         "params": hub.params,
-        "windows": hub.windows,
+        "windows": [w.to_dict() for w in hub.windows],
         "status": hub.status,
         "error": hub.error,
         "basis": results.get("basis"),

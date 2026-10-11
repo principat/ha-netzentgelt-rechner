@@ -8,7 +8,6 @@ cards:
       - number.netzentgelt_rechner_fixed
       - number.netzentgelt_rechner_ht
       - number.netzentgelt_rechner_nt
-      - text.netzentgelt_rechner_zeitfenster_q1
       - button.netzentgelt_rechner_neu_berechnen
   - type: entities
     title: Ergebnis

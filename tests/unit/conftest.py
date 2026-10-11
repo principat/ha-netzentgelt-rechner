@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.netzentgelt_rechner.calc import Params
+from custom_components.netzentgelt_rechner.calc import Params, TariffWindow, windows_from_quarters
 
 # UI units (ct/kWh, %, EUR/year, kWh); mirrors const.NUMBER_PARAMS defaults
 UI_DEFAULTS: dict[str, float] = {
@@ -38,5 +38,6 @@ def params() -> Params:
 
 
 @pytest.fixture
-def windows() -> dict[str, str]:
-    return dict(WINDOWS)
+def windows() -> list[TariffWindow]:
+    """The former quarterly default, expressed as tariff windows for 2026 (AK-16)."""
+    return windows_from_quarters(WINDOWS, 2026)

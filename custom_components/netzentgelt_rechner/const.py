@@ -35,10 +35,8 @@ NUMBER_PARAMS: dict[str, tuple[str, str, float, float, float, float]] = {
     "invest": ("Kosten der Speichererweiterung", "€", 0, 100000, 10, 1500.0),
 }
 
-# Zeitfenster je Quartal: ein Zeichen je Stunde 0-23: N Niedertarif, S Standard, H Hochtarif
+# v1.0.0 stored one 24-character window per quarter (N/S/H per hour); kept for the migration
 DEFAULT_WINDOW = "NNNNNSSSSSSHHSSSSHHSSSSN"
-QUARTERS = ("Q1", "Q2", "Q3", "Q4")
-WINDOW_PATTERN = r"^[NSH]{24}$"
 
 STAGE_NAMES = {"N": "Niedertarif", "S": "Standard", "H": "Hochtarif"}
 
