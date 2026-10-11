@@ -82,7 +82,7 @@ Migration: `version`-Feld; unbekannte Schlüssel ignorieren, fehlende mit Standa
 
 ## 4 Entitäten
 
-Gerät: `DeviceInfo(identifiers={(DOMAIN, entry_id)}, name="Netzentgelt-Rechner", entry_type=SERVICE)`.
+Gerät: `DeviceInfo(identifiers={(DOMAIN, entry_id)}, name=entry.title, entry_type=SERVICE)`; der Titel ist der vom Nutzer vergebene Instanzname (§9a).
 Alle `has_entity_name=True`, `unique_id = f"{entry_id}_{key}"`.
 
 | Plattform | key | Name | Einheit | Kategorie | Hinweis |
@@ -173,6 +173,17 @@ rows = await get_instance(hass).async_add_executor_job(
 - Button und Zeitplaner starten die Berechnung via `entry.async_create_background_task`.
 - Timeout-Wächter: Gesamtlauf > 120 s → abbrechen (Flag `cancel` in `pause()`), Status `fehler`.
 
+## 6a Mehrere Instanzen (AK-20, AK-21)
+
+- Alles Zustandsbehaftete hängt am Entry: `Hub` in `entry.runtime_data`, Store `netzentgelt_rechner.<entry_id>`,
+  `unique_id = f"{entry_id}_{key}"`, Gerät je Entry. Es gibt keinen modulweiten Zustand außer dem Lock unten.
+- **Globales Single-Flight:** `hass.data[DOMAIN]["calc_lock"]` (ein `asyncio.Lock`). `Hub.async_calculate()` bleibt
+  je Instanz idempotent (läuft sie schon, ist ein weiterer Auslöser ein No-op, AK-6), erwirbt dann aber das globale Lock
+  **vor** Statistik-Abruf und Rechnung; die Zeitmessung (`dauer_s`) und der 120-s-Wächter beginnen erst nach dem Erwerb.
+  Wartend ist der Status `rechnet`. Auslöser (Monatslauf 03:30, Start +300 s) feuern bei allen Instanzen gleichzeitig
+  und reihen sich über das Lock ein.
+- Beim Entladen einer Instanz wird nur ihr eigener Zustand gespeichert/freigegeben; das globale Lock bleibt.
+
 ## 7 Rechenkern (`calc/`)
 
 Portierung von `reference/modul3_calc_prototype.py` (dort mit Brute-Force-Test verifiziert). Öffentliche API:
@@ -200,7 +211,8 @@ Regeln:
 
 ## 8 Config Flow
 
-- Einmalig (`single_config_entry`), Schritt `user`: drei `EntitySelector(domain="sensor")` für
+- Mehrfach einrichtbar (kein `single_config_entry`, AK-20), Schritt `user`: Pflichtfeld `name` (Titel des Entries,
+  Standard „Netzentgelt-Rechner“, bei Belegung mit Zähler „… 2“; doppelter Name → Fehler `name_exists` am Feld), dazu drei `EntitySelector(domain="sensor")` für
   `import_entity`, `export_entity`, `price_entity` mit Standardwerten aus `const`.
   Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
   (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).

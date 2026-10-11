@@ -197,15 +197,32 @@ Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezä
 4. Ein mitgeliefertes **Dashboard-Beispiel** (YAML im Repo) mit: Tabelle der Szenarien, Balkendiagramm,
    Eingabekarte, Preisverlauf des Netzentgelts.
 
+## 9a Mehrere Instanzen
+
+Die Integration lässt sich **mehrfach einrichten**, z. B. um verschiedene Basisdaten (andere Zähler oder
+Zeiträume) gegenüberzustellen oder unterschiedliche Standorte und Annahmen durchzuspielen.
+
+- Jede Instanz hat einen **eigenen Namen** (im Einrichtungsdialog vergeben, Pflichtfeld, eindeutig), eigene
+  Quellsensoren, Eingaben (§8), Tarifzeiten (§7), Ergebnisse und ein eigenes Gerät. Name der Instanz =
+  Gerätename; er steckt in den Entitätsnamen und -IDs, sodass sich die Instanzen im Dashboard unterscheiden lassen.
+- Instanzen sind **vollständig unabhängig**: Änderungen, Neuberechnungen oder das Löschen einer Instanz
+  beeinflussen eine andere nie.
+- Berechnungen aller Instanzen laufen **nacheinander, nie gleichzeitig**: Eine Instanz, die ihren Lauf
+  startet, während eine andere rechnet, wartet, bis sie dran ist (Status `rechnet`). Das schützt den
+  Event-Loop und kleine Geräte (Single-Flight über alle Instanzen).
+- Eine bestehende Einrichtung (Version 1.x) bleibt als erste Instanz mit ihrem bisherigen Namen und
+  allen Entitäten unverändert.
+
 ## 10 Nicht-Ziele
 
 Keine Steuerung von Geräten (das übernimmt ein Energiemanagementsystem); keine Prognose zukünftiger Preise; keine Berechnung
 von iMSys-/Steuerboxkosten; keine Abrechnung; keine Cloud-Zugriffe; keine Mehrsprachigkeit über
-Deutsch/Englisch hinaus; keine Mehrfachinstanz.
+Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Oberfläche (siehe §9a).
 
 ## 11 Akzeptanzkriterien
 
-- **AK-1** Nach Einrichtung existieren alle Entitäten aus §9 unter einem Gerät „Netzentgelt-Rechner“.
+- **AK-1** Nach Einrichtung existieren alle Entitäten aus §9 unter einem Gerät, das den Namen der Instanz
+  trägt (Standard „Netzentgelt-Rechner“).
 - **AK-2** Zahleneingaben sind im Dashboard änderbar, werden validiert (Bereiche),
   überstehen einen HA-Neustart und lösen **keine** automatische Neuberechnung aus, aktualisieren aber
   den Netzentgelt-Sensor sofort.
@@ -244,6 +261,11 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
   Netzanschlussbegrenzung (Golden-Test); mit Begrenzung hält jeder optimierte Tag in jeder Stunde Bezug und
   Einspeisung innerhalb der Grenzen, und die Ersparnis ist nie größer als ohne Begrenzung. Die Tages-DP
   stimmt weiterhin mit der Vollenumeration überein (AK-4, auch mit Begrenzung).
+- **AK-20** Es lassen sich mehrere Instanzen einrichten (Name Pflicht und eindeutig, lokalisierte Meldung am
+  Feld). Jede hat eigene Entitäten, Eingaben, Tarifzeiten und Ergebnisse; Änderungen, Berechnung oder Löschen
+  einer Instanz lassen die andere unverändert (inkl. Neustart).
+- **AK-21** Berechnungen verschiedener Instanzen laufen nie gleichzeitig; eine wartende Instanz hat Status
+  `rechnet` und rechnet danach genau einmal (AK-6 gilt je Instanz weiter).
 - **AK-12** Deutsche Oberfläche; alle Texte übersetzbar (`translations/de.json`, `en.json`).
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)

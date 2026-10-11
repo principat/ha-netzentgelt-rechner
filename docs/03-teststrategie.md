@@ -37,7 +37,10 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
   Berechnung liefert Ergebnis; fehlende Statistik → Status `fehler` mit Klartext (AK-8).
 - **Zeitplan (AK-9):** `async_fire_time_changed` auf 1. des Monats 03:30; Verzögerungsstart nur ohne Ergebnis.
 - **Persistenz (AK-10):** Store füllen, Config-Entry neu laden, Ergebnisse und Status unverändert.
-- **Config Flow (AK-11):** nicht vorhandene Entität abgelehnt; Options Flow ändert Quellen; `single_config_entry`.
+- **Config Flow (AK-11):** nicht vorhandene Entität abgelehnt; Options Flow ändert Quellen; mehrere Instanzen (Name Pflicht/eindeutig, AK-20).
+- **Mehrere Instanzen (AK-20, AK-21):** zwei Entries mit unterschiedlichen Quellen/Eingaben/Tarifzeiten → eigene
+  Entitäten, unabhängige Ergebnisse, Entladen der einen lässt die andere unverändert; Läufe zweier Instanzen
+  überlappen nie (Nebenläufigkeits-Zähler), die wartende Instanz rechnet danach genau einmal.
 - **Übersetzungen (AK-12):** `de.json` und `en.json` haben identische Schlüssel; kein Text ohne Schlüssel.
 - **Event-Loop-Latenz (AK-7):** Watchdog-Task misst Schlafabweichung während eines 12-Monats-Laufs
   (Maximum < 50 ms, in CI-Toleranz 100 ms).
