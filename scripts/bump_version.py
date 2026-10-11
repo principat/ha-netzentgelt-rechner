@@ -1,4 +1,5 @@
 """Update the version field in manifest.json. Used by semantic-release."""
+
 import json
 import sys
 from pathlib import Path
