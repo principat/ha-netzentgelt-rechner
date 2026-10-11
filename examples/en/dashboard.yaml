@@ -1,0 +1,17 @@
+# Example view; adjust the entity IDs after setup
+title: Is it worth it?
+path: profitability
+cards:
+  - type: entities
+    title: Assumptions
+    entities:
+      - number.netzentgelt_rechner_fixed
+      - number.netzentgelt_rechner_ht
+      - number.netzentgelt_rechner_nt
+      - text.netzentgelt_rechner_zeitfenster_q1
+      - button.netzentgelt_rechner_neu_berechnen
+  - type: entities
+    title: Result
+    entities:
+      - sensor.netzentgelt_rechner_wirtschaftlichkeit
+      - sensor.netzentgelt_rechner_netzentgelt

@@ -4,30 +4,38 @@ on:
     branches: [main]
 permissions:
   contents: write
+  issues: write
   pull-requests: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  release-please:
+  test:
     runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.rp.outputs.release_created }}
-      tag_name: ${{ steps.rp.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v5
-        id: rp
-        with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-  asset:
-    # Releases created with GITHUB_TOKEN do not trigger `release: published`,
-    # so the ZIP is built and attached in the same workflow run.
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - run: uv run pytest
+  release:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
-      - run: cd custom_components/netzentgelt_rechner && zip -r ../../netzentgelt_rechner.zip .
-      - run: gh release upload "${{ needs.release-please.outputs.tag_name }}" netzentgelt_rechner.zip --clobber
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog@6
+            @semantic-release/exec@6
+            @semantic-release/git@10
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

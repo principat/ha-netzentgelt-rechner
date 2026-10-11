@@ -45,7 +45,7 @@ custom_components/netzentgelt_rechner/
 tests/unit/ tests/integration/ tests/e2e/ fixtures/
 reference/           Prototyp (zum Portieren, nicht ausliefern)
 docs/  scripts/  .github/workflows/  hacs.json  pyproject.toml  CHANGELOG.md
-examples/dashboard.yaml
+examples/{de,en}/dashboard.yaml
 ```
 
 ## 3 Datenmodell
@@ -223,5 +223,5 @@ Regeln:
 
 Im Ziel-HA existieren aus der Vorarbeit **temporär**: Helfer `input_number.m3_*`, `input_text.m3_info`
 und im Dashboard `dashboard-strompreis` die Ansicht „Lohnt es sich?“ (liest diese Helfer). Nach
-Inbetriebnahme: Ansicht auf die neuen Sensoren umstellen (`examples/dashboard.yaml`), Helfer
+Inbetriebnahme: Ansicht auf die neuen Sensoren umstellen (`examples/de/dashboard.yaml`, `examples/en/dashboard.yaml`), Helfer
 löschen. Siehe `05-vorwissen-und-fakten.md`.

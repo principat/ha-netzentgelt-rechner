@@ -19,9 +19,10 @@ Lies zuerst, in dieser Reihenfolge:
 - **Kleine Schritte, grüne Pipeline.** Trunk-basiert: kurzlebige Branches `feat/…`, `fix/…`, PR nach
   `main`, Squash-Merge, Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`).
 - **Definition of Done** je PR: ruff + mypy grün, Unit- und Integrationstests grün, Abdeckung der
-  Rechenlogik `calc/` ≥ 95 % Zweige, hassfest und HACS-Validierung grün, Specs und CHANGELOG-relevante
-  Texte aktualisiert, keine neuen Warnungen im HA-Log im E2E-Lauf.
-- Sprache: Doku, UI-Texte, Entitätsnamen **Deutsch** (Übersetzungen `de`, Fallback `en`);
+  Rechenlogik `calc/` ≥ 95 % Zweige, hassfest und HACS-Validierung grün, Specs und Anwenderdoku (DE+EN) aktualisiert, keine neuen Warnungen im HA-Log im E2E-Lauf.
+- Sprache: Entwicklerdoku (`docs/`, Entwicklerteil der README) und Entitätsnamen **Deutsch**, UI-Übersetzungen `de` + `en`;
+  **Anwenderdoku (README, `examples/`) immer zweisprachig**: README englisch zuerst, Abschnitt „Deutsch“ am Ende,
+  Beispiele in `examples/de/` und `examples/en/`;
   Code, Bezeichner, Commit-Messages **Englisch**.
 
 ## Harte Randbedingungen
@@ -36,6 +37,12 @@ Lies zuerst, in dieser Reihenfolge:
 - Mindestversion HA: 2026.2.0 (CI-Matrix auch gegen aktuelles 2026.10.x); Python ≥ 3.13.
 - Niemals Zugangsdaten, Tokens oder echte Verbrauchsdaten committen. E2E-Fixtures sind synthetisch
   oder anonymisiert.
+
+## Releases (semantic-release)
+- Conventional Commits entscheiden: `fix` Patch, `feat` Minor, `feat!`/`BREAKING CHANGE:` Major;
+  `docs/chore/ci/test` lösen kein Release aus – Typ bewusst wählen.
+- Release-Commits `chore(release): x.y.z [skip ci]` macht nur die CI, nie von Hand. Release-Job hängt an `test`.
+- Nicht committen/pushen ohne Aufforderung.
 
 ## Übersetzungen
 - `strings.json`, `translations/de.json`, `translations/en.json` bleiben schlüsselgleich

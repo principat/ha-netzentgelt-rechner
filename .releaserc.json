@@ -1,0 +1,30 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "python3 scripts/bump_version.py ${nextRelease.version} && (cd custom_components/netzentgelt_rechner && zip -qr ../../netzentgelt_rechner.zip .)"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "custom_components/netzentgelt_rechner/manifest.json",
+          "CHANGELOG.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [{"path": "netzentgelt_rechner.zip"}]
+      }
+    ]
+  ]
+}

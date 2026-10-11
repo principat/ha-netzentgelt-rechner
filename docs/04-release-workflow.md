@@ -10,14 +10,17 @@
 - Semantic Versioning. Version steht in `manifest.json` (`version`) – wird vom Release-Prozess gesetzt.
 - Commit-Messages und PR-Titel auf Englisch; PR-Beschreibung verweist auf AK-n der Spezifikation.
 
-## 3 Release-Ablauf (release-please)
-1. Merges nach `main` → Action `release-please` pflegt einen Release-PR („chore(main): release x.y.z“)
-   mit CHANGELOG.md und Versionssprung in `manifest.json`.
-2. Release-PR mergen → Tag `vX.Y.Z` und GitHub-Release werden erzeugt.
-3. Job `asset` in `release.yml` (läuft nach release-please, wenn `release_created`; ein Trigger auf `release: published` greift bei `GITHUB_TOKEN`-Releases nicht) baut `netzentgelt_rechner.zip`
-   (Inhalt von `custom_components/netzentgelt_rechner/`), hängt es ans Release an.
+## 3 Release-Ablauf (semantic-release)
+1. Merge nach `main` → Workflow `release.yml`: Job `test` (ruff, mypy, pytest) ist **Gate**; nur wenn er
+   grün ist, läuft Job `release` (`needs: test`).
+2. semantic-release wertet die Conventional Commits seit dem letzten Tag aus. Ohne `feat`/`fix`/`perf`/
+   `BREAKING CHANGE` entsteht kein Release (`docs`, `chore`, `ci`, `test` lösen nichts aus).
+3. Bei einem Release: `scripts/bump_version.py` setzt `version` in `manifest.json`, `netzentgelt_rechner.zip`
+   (Inhalt von `custom_components/netzentgelt_rechner/`) wird gebaut, `CHANGELOG.md` erzeugt; CI committet
+   `chore(release): x.y.z [skip ci]` (**nie von Hand**), setzt Tag `vX.Y.Z` und hängt das ZIP ans GitHub-Release.
 4. `hacs.json` mit `"zip_release": true`, `"filename": "netzentgelt_rechner.zip"` → HACS lädt das ZIP.
-- Vorabversionen: Tag `vX.Y.Z-rc.N` → als Pre-Release markiert, nur E2E-Gate.
+- Konfiguration: `.releaserc.json`. Browser-/E2E-Tests laufen im PR (`ci.yml`), sind aber kein Release-Gate.
+- Voraussetzung: Branch-Schutz von `main` muss Pushes des Release-Commits durch GitHub Actions erlauben.
 
 ## 4 CI-Jobs (`.github/workflows/ci.yml`)
 | Job | Inhalt |
@@ -30,7 +33,7 @@
 
 ## 5 Definition of Release
 - Alle Gates grün auf dem Release-Commit.
-- CHANGELOG automatisch; Spezifikationen konsistent mit dem Verhalten (Reviewpunkt im PR-Template).
+- CHANGELOG automatisch (semantic-release); Spezifikationen konsistent mit dem Verhalten (Reviewpunkt im PR-Template).
 - Installationshinweis in README (HACS Custom Repository oder manuelles Kopieren).
 - Rollback = vorheriges Release in HACS neu installieren; Datenmodell-Migrationen sind abwärts tolerant
   (Store-Version, siehe Tech-Spec §3.4).
