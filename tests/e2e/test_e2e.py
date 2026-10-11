@@ -162,7 +162,12 @@ def setup_integration(ha: HA) -> dict[str, str]:
     done = ha.request(
         "POST",
         f"/api/config/config_entries/flow/{flow['flow_id']}",
-        {"import_entity": IMPORT_ID, "export_entity": EXPORT_ID, "price_entity": PRICE_ID},
+        {
+            "name": "Netzentgelt-Rechner",
+            "import_entity": IMPORT_ID,
+            "export_entity": EXPORT_ID,
+            "price_entity": PRICE_ID,
+        },
     )
     assert done["type"] == "create_entry", done
     return ha.wait_until(lambda: ha.entity_ids(DOMAIN) or None, 30, "entities")

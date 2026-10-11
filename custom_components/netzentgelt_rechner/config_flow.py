@@ -16,6 +16,7 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlowWithReload,
 )
+from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.selector import (
     DateSelector,
@@ -59,14 +60,18 @@ _FIELDS = (
 )
 
 
-def _schema(defaults: dict[str, Any]) -> vol.Schema:
+DEFAULT_NAME = "Netzentgelt-Rechner"
+
+
+def _schema(defaults: dict[str, Any], *, name: str | None = None) -> vol.Schema:
+    """Source selectors; ``name`` adds the instance-name field (initial setup only)."""
     selector = EntitySelector(EntitySelectorConfig(domain="sensor"))
-    return vol.Schema(
-        {
-            vol.Required(key, default=defaults.get(key, default)): selector
-            for key, default in _FIELDS
-        }
-    )
+    fields: dict[Any, Any] = {}
+    if name is not None:
+        fields[vol.Required(CONF_NAME, default=name)] = str
+    for key, default in _FIELDS:
+        fields[vol.Required(key, default=defaults.get(key, default))] = selector
+    return vol.Schema(fields)
 
 
 async def _validate(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str, str]:
@@ -81,18 +86,30 @@ async def _validate(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str
 
 
 class NetzentgeltConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Single-instance config flow."""
+    """Config flow; several instances are allowed, each with a unique name (AK-20)."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        taken = {e.title.strip().casefold() for e in self._async_current_entries()}
         errors: dict[str, str] = {}
         if user_input is not None:
-            errors = await _validate(self.hass, user_input)
+            name = user_input[CONF_NAME].strip()
+            if not name:
+                errors[CONF_NAME] = "name_empty"
+            elif name.casefold() in taken:
+                errors[CONF_NAME] = "name_exists"
+            errors.update(await _validate(self.hass, user_input))
             if not errors:
-                return self.async_create_entry(title="Netzentgelt-Rechner", data=user_input)
+                sources = {k: v for k, v in user_input.items() if k != CONF_NAME}
+                return self.async_create_entry(title=name, data=sources)
+        proposal, count = DEFAULT_NAME, 1
+        while proposal.casefold() in taken:
+            count += 1
+            proposal = f"{DEFAULT_NAME} {count}"
+        name = user_input[CONF_NAME] if user_input else proposal
         return self.async_show_form(
-            step_id="user", data_schema=_schema(user_input or {}), errors=errors
+            step_id="user", data_schema=_schema(user_input or {}, name=name), errors=errors
         )
 
     @staticmethod

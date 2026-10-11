@@ -65,7 +65,7 @@ class Hub:
         self.results: dict[str, Any] | None = None
         self.status = STATUS_NONE
         self.error: str | None = None
-        self._lock = asyncio.Lock()
+        self._lock = asyncio.Lock()  # one run per instance (AK-6)
 
     # ------------------------------------------------------------------ configuration
 
@@ -203,12 +203,15 @@ class Hub:
         if self._lock.locked():
             return
         async with self._lock:
-            started = time.monotonic()
             self.status = STATUS_RUNNING
             self.error = None
             self._notify()
             try:
-                self.results = await self._run(started)
+                # one run at a time across all instances; waiting keeps the status "rechnet" (AK-21)
+                async with self.hass.data.setdefault(DOMAIN, {}).setdefault(
+                    "calc_lock", asyncio.Lock()
+                ):
+                    self.results = await self._run(time.monotonic())
                 self.status = STATUS_DONE
             except calc.CalcError as err:
                 self.status, self.error = STATUS_ERROR, str(err)

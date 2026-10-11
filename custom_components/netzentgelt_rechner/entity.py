@@ -24,7 +24,7 @@ class NetzentgeltEntity(Entity):
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Netzentgelt-Rechner",
+            name=entry.title,
             entry_type=DeviceEntryType.SERVICE,
         )
 

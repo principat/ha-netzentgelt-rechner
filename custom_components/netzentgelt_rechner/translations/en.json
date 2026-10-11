@@ -5,17 +5,20 @@
         "title": "Grid fee calculator",
         "description": "Choose the sensors that hold the long-term statistics.",
         "data": {
+          "name": "Instance name",
           "import_entity": "Meter reading import",
           "export_entity": "Meter reading export",
           "price_entity": "Electricity price history"
+        },
+        "data_description": {
+          "name": "Unique name of this setup, e.g. the location. It becomes the device name."
         }
       }
     },
     "error": {
-      "entity_not_found": "Entity not found (neither a state nor statistics)."
-    },
-    "abort": {
-      "single_instance_allowed": "The grid fee calculator can only be set up once."
+      "entity_not_found": "Entity not found (neither a state nor statistics).",
+      "name_empty": "Please enter a name.",
+      "name_exists": "An instance with this name already exists."
     }
   },
   "options": {

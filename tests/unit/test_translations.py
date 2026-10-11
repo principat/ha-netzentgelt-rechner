@@ -42,17 +42,19 @@ def test_no_unquoted_braces_or_markdown_in_plain_text(name):  # AK-12
         assert "**" not in text and "](" not in text, path
 
 
-def test_flow_error_keys_are_translated():  # AK-11, AK-14
+def test_flow_error_keys_are_translated():  # AK-11, AK-14, AK-20
     source = (DIR / "config_flow.py").read_text(encoding="utf-8")
     keys = set(
         re.findall(
-            r'"(entity_not_found|window_(?:stage|date_order|hour_range|hours_equal|overlap))"',
+            r'"(entity_not_found|name_empty|name_exists'
+            r'|window_(?:stage|date_order|hour_range|hours_equal|overlap))"',
             source,
         )
     )
-    assert {"entity_not_found", "window_overlap"} <= keys
+    assert {"entity_not_found", "name_exists", "name_empty", "window_overlap"} <= keys
     for name in FILES:
         texts = _flatten(_load(name))
         for key in keys:
-            assert f"options.error.{key}" in texts, (name, key)
-        assert "config.error.entity_not_found" in texts
+            section = "config" if key.startswith(("name_", "entity_")) else "options"
+            assert f"{section}.error.{key}" in texts, (name, key)
+        assert "options.error.entity_not_found" in texts

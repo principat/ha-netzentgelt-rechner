@@ -32,6 +32,7 @@ def entry(hass: HomeAssistant) -> MockConfigEntry:
     config = MockConfigEntry(
         domain=DOMAIN,
         entry_id=ENTRY_ID,
+        title="Netzentgelt-Rechner",
         data={CONF_IMPORT: IMPORT_ID, CONF_EXPORT: EXPORT_ID, CONF_PRICE: PRICE_ID},
     )
     config.add_to_hass(hass)

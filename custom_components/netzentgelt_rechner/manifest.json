@@ -13,6 +13,5 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/principat/ha-netzentgelt-rechner/issues",
   "requirements": [],
-  "single_config_entry": true,
   "version": "1.0.0"
 }

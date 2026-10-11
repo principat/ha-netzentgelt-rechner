@@ -51,6 +51,10 @@ and in the options dialog:
    (*Configure* on the integration), then press *Neu berechnen* (recalculate). The result appears in
    the *Wirtschaftlichkeit* (profitability) sensor; the current grid fee in the *Netzentgelt* sensor.
 
+You can set the integration up **several times** (e.g. to compare different base data or locations); give each
+instance its own name, it becomes the device name and part of the entity IDs. Calculations of all instances run one
+after another.
+
 License: MIT. Dashboard example: [`examples/en/dashboard.yaml`](examples/en/dashboard.yaml).
 
 ## Development
@@ -110,6 +114,10 @@ und im Optionsdialog ein:
 4. Ihre Werte (Zahlen-Entitäten am Gerät) und Tarifzeiten (*Konfigurieren* an der Integration)
    eintragen, dann *Neu berechnen* drücken. Das Ergebnis steht im Sensor *Wirtschaftlichkeit*, das
    aktuelle Netzentgelt im Sensor *Netzentgelt*.
+
+Die Integration lässt sich **mehrfach einrichten** (z. B. um verschiedene Basisdaten oder Standorte gegenüberzustellen);
+jede Instanz bekommt einen eigenen Namen, der zum Gerätenamen und Teil der Entitäts-IDs wird. Die Berechnungen aller
+Instanzen laufen nacheinander.
 
 Lizenz: MIT. Dashboard-Beispiel: [`examples/de/dashboard.yaml`](examples/de/dashboard.yaml).
 

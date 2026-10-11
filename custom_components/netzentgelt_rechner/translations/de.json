@@ -5,17 +5,20 @@
         "title": "Netzentgelt-Rechner",
         "description": "Wähle die Sensoren mit den Langzeitstatistiken.",
         "data": {
+          "name": "Name der Instanz",
           "import_entity": "Zählerstand Bezug",
           "export_entity": "Zählerstand Einspeisung",
           "price_entity": "Strompreis-Verlauf"
+        },
+        "data_description": {
+          "name": "Eindeutiger Name dieser Einrichtung, z. B. der Standort. Er wird zum Gerätenamen."
         }
       }
     },
     "error": {
-      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik)."
-    },
-    "abort": {
-      "single_instance_allowed": "Der Netzentgelt-Rechner kann nur einmal eingerichtet werden."
+      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik).",
+      "name_empty": "Bitte einen Namen eingeben.",
+      "name_exists": "Eine Instanz mit diesem Namen gibt es schon."
     }
   },
   "options": {
