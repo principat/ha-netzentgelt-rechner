@@ -56,9 +56,9 @@ Alle Ergebnisse sind **Ersparnis in € pro Jahr gegenüber dem heutigen Festpre
 |---|---|---|
 | S0 | Heute (Referenz) | `fixed` |
 | S1 | Modul 1 allein | `fixed`, plus Pauschale `rebate` |
-| S2 | Modul 3 (inkl. Modul 1) | `e_fix + netz(Quartal, Stunde) + umlagen`, plus `rebate`, minus `m3_base_delta` |
+| S2 | Modul 3 (inkl. Modul 1) | `e_fix + netz(Datum, Stunde) + umlagen`, plus `rebate`, minus `m3_base_delta` |
 | S3 | Dynamischer Tarif | `(spot + markup)·(1+MwSt) + st + umlagen`, minus `dyn_base` |
-| S4 | Kombination | `(spot + markup)·(1+MwSt) + netz(Quartal, Stunde) + umlagen`, plus `rebate`, minus `dyn_base`, minus `m3_base_delta` |
+| S4 | Kombination | `(spot + markup)·(1+MwSt) + netz(Datum, Stunde) + umlagen`, plus `rebate`, minus `dyn_base`, minus `m3_base_delta` |
 
 mit `e_fix = fixed − st − umlagen` (Energieanteil des heutigen Festpreises, brutto).
 
@@ -75,7 +75,7 @@ Abgeleitet: **Mehrwert der Erweiterung** = (mit Erweiterung) − (mit Speicher) 
 
 - Intern €/kWh; Eingaben des Nutzers in **ct/kWh** (Netzentgelt, Arbeitspreis, Umlagen, Aufschlag,
   Verschleiß) bzw. €/Jahr; Umrechnung zentral.
-- `netz(q, h)` = `nt`, `st` oder `ht` je nach Zeichen `zeitfenster[q][h]` (`N`, `S`, `H`).
+- `netz(d, h)` = `nt`, `st` oder `ht` je nach Stufe der Tarifzeit (§7) für Datum `d` und Stunde `h`; ohne Tarifzeit `st`.
 - `umlagen` = Konzessionsabgabe + KWKG + §19-Umlage + Offshore + Stromsteuer, **brutto**, ein Wert.
 - Mehrwertsteuer nur auf `(spot + markup)`; Netzentgelt, Umlagen, `fixed` sind bereits brutto.
 - Negative Börsenpreise werden an den Kunden durchgereicht (Energieanteil kann negativ werden;
@@ -96,6 +96,14 @@ Bezugs-/Einspeiseprofil des Tages als Rest nach dem vorhandenen System:
    ins Netz (Vergütung der Stunde).
 3. Wirkungsgrad `eta_rt` (Laden × Entladen), je Richtung `√eta_rt`.
 4. Leistung ≤ `c_rate · Kapazität` je Stunde; Füllstandsraster 1 kWh; Verschleißkosten je kWh Durchsatz.
+4a. **Netzanschluss:** Zusätzlich begrenzt die Leistung des Netzanschlusses den Speicher. In jeder Stunde
+   darf der Bezug (gemessener Bezug des Haushalts **plus** Laden des Speichers aus dem Netz) höchstens
+   `grid_import_kw · 1 h` betragen, die Einspeisung (gemessene Einspeisung **plus** Entladen ins Netz,
+   abzüglich dessen, was der Speicher aus Überschuss aufnimmt) höchstens `grid_export_kw · 1 h`.
+   Der Wert 0 bedeutet „unbegrenzt“ (dann verhält sich die Rechnung wie ohne diese Regel). Die Begrenzung
+   gilt auf Stundenbasis (Mittelwert je Stunde); kurze Spitzen innerhalb der Stunde werden nicht abgebildet.
+   Hintergrund: Ein großer Speicher mit hoher Leistung kann sonst Netzbezug oder Einspeisung verschieben,
+   die der Anschluss (Hauptsicherung, Netzbetreiber-Vorgabe, Einspeisebegrenzung) gar nicht zulässt.
 5. Tage mit Netzbezug ≤ 0,5 kWh werden nicht optimiert (kein Nutzen, spart Rechenzeit).
 6. Das Ergebnis je Tag ist das **exakte Optimum** (Dynamische Programmierung); das Verfahren muss
    gegen eine Vollenumeration für kleine Fälle identisch sein (AK-4).
@@ -161,12 +169,20 @@ Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein E
 | flex_kwh | verschiebbarer Speicher (nutzbar) | kWh | 13,5 | Beispiel: 15 kWh × 0,9 nutzbar |
 | extra_kwh | Erweiterung (nutzbar) | kWh | 14,4 | Beispiel: 16 kWh × 0,9 nutzbar |
 | c_rate | Leistung | 1/h | 0,5 | Annahme |
+| grid_import_kw | Netzanschluss: maximale Bezugsleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Hauptsicherung, Anschlussvertrag) |
+| grid_export_kw | Netzanschluss: maximale Einspeiseleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Netzbetreiber, ggf. Einspeisebegrenzung) |
 | wear | Verschleiß | ct/kWh | 0 | Annahme |
 | invest | Kosten Erweiterung | € | 1500 | Beispiel; eigene Kosten eintragen |
 | tarifzeiten | Liste der HT-/NT-Tarifzeiten | Liste (Optionsdialog) | siehe §7 | Annahme |
 
 Die Standardwerte stammen aus der Referenzanlage des Autors (Netzbetreiber SachsenNetze, Dresden, Stand 2026)
 und sind **Beispielwerte**. Wer einen anderen Netzbetreiber oder Tarif hat, trägt seine eigenen Werte ein.
+
+**Hilfe zu jedem Eingabefeld:** Wer unsicher ist, bekommt dort, wo er das Feld pflegt, eine Detailhilfe
+mit drei Angaben: (1) **wozu** das Feld dient bzw. wie es in die Rechnung eingeht, (2) **was** einzutragen
+ist (Einheit, brutto/netto, typischer Bereich, Beispiel), (3) **woher** der Wert kommt (z. B. Preisblatt
+des Netzbetreibers, Stromrechnung, Datenblatt des Speichers, Vertrag). Das gilt für alle Zahlenfelder, die
+Tarifzeiten (§7) und die Quellsensoren. Die Hilfetexte sind Deutsch und Englisch verfügbar.
 
 Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezähler, Börsenpreis-Sensor.
 
@@ -221,6 +237,12 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
   (Golden-Test).
 - **AK-17** Gespeicherte Quartals-Zeitfenster aus Version 1.0.0 werden verlustfrei in Tarifzeiten
   umgewandelt; veraltete Zeitfenster-Entitäten werden entfernt.
+- **AK-18** Zu jedem Eingabefeld (§8, §7, Quellsensoren) gibt es eine Detailhilfe mit Zweck, einzutragendem Wert
+  und Bezugsquelle in Deutsch und Englisch; ein Test stellt sicher, dass kein Feld ohne Hilfetext existiert.
+- **AK-19** Mit `grid_import_kw = grid_export_kw = 0` sind alle Ergebnisse identisch zu denen ohne
+  Netzanschlussbegrenzung (Golden-Test); mit Begrenzung hält jeder optimierte Tag in jeder Stunde Bezug und
+  Einspeisung innerhalb der Grenzen, und die Ersparnis ist nie größer als ohne Begrenzung. Die Tages-DP
+  stimmt weiterhin mit der Vollenumeration überein (AK-4, auch mit Begrenzung).
 - **AK-12** Deutsche Oberfläche; alle Texte übersetzbar (`translations/de.json`, `en.json`).
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)
@@ -234,3 +256,8 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
 - **F-6** Ist `feedin` = 6,29 ct der tatsächliche anzulegende Wert? (Teileinspeisung, 23,8 kWp.)
 - **F-7** Soll die Auswertung später auch den **Ist-Betrieb** (Modul 3 aktiv) gegen die Prognose
   vergleichen? (Dann zusätzliche Kennzahlen.)
+- **F-8** Wie zeigt die Oberfläche die Hilfe (AK-18) an? Kandidaten: Beschreibung im Optionsdialog
+  (Feld-Hilfetexte), zusätzliches Attribut `hilfe` je Zahlenentität, mitgelieferte Markdown-Karte im
+  Dashboard-Beispiel. Home Assistant zeigt an Zahlenentitäten selbst keine Feldbeschreibung an.
+- **F-9** Soll später auch eine Begrenzung nach §14a (z. B. Dimmung steuerbarer Verbrauchseinrichtungen auf
+  4,2 kW) modelliert werden? Heute: nein, nur Netzanschlussleistung (§6 4a).

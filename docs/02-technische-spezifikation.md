@@ -1,8 +1,9 @@
 # 02 Technische Spezifikation
 
 Bezug: `01-fachliche-spezifikation.md` (AK-n). Zielplattform: Home Assistant Core 2026.10.x
-(Python 3.14), Mindestversion 2026.2.0, Betriebssystem HAOS auf Raspberry Pi 5 (aarch64), Recorder
-mit **MariaDB**.
+(Python 3.14), Mindestversion 2026.2.0, Referenzumgebung des Autors: HAOS auf Raspberry Pi 5 (aarch64) mit MariaDB-Recorder. Die Integration ist
+**datenbankunabhängig** (Zugriff nur über die Recorder-API; getestet mit SQLite) und verlangt kein bestimmtes
+Recorder-Backend.
 
 ## 1 Architektur
 
@@ -64,7 +65,7 @@ mit `code` ∈ `stage | date_order | hour_range | hours_equal | overlap`.
   für Schleifen). `project_day(day, year)`: gleiche Tag/Monat im `year`, 29.02. → 28.02.
 - `windows_from_quarters(quarters: Mapping[str,str], year)`: Umwandlung der alten 24-Zeichen-Fenster je Quartal
   (zusammenhängende N-/H-Läufe, Lauf über Mitternacht zusammengeführt) – für die Übernahme aus v1.0.0 und Tests.
-- `DEFAULT_WINDOWS(year)`: NT 23–5, HT 11–13, HT 17–19, jeweils 01.01.–31.12. des Jahres.
+- `default_windows(year)`: NT 23–5, HT 11–13, HT 17–19, jeweils 01.01.–31.12. des Jahres.
 
 ### 3.3 Erweiterbarkeit Quartalspreise (F-2)
 `fees.price(stage, quarter, params)` ist die **einzige** Stelle, die einen Stufenpreis ermittelt;
@@ -154,7 +155,8 @@ rows = await get_instance(hass).async_add_executor_job(
 - `None`-Werte → 0 (Verbrauch) bzw. Stunde überspringen (Preis). Negative `change` (Zählerreset) → 0.
 - Tag gilt als vollständig, wenn 23, 24 oder 25 Stunden mit Preis vorliegen (Zeitumstellung).
 - Lokale Zeit: `zoneinfo.ZoneInfo(hass.config.time_zone)`.
-- **Nie** direkt auf die Datenbank zugreifen (MariaDB, Last), nur über die Recorder-API.
+- **Nie** direkt auf die Datenbank zugreifen (egal ob SQLite, MariaDB oder PostgreSQL; Last, Backend-Unabhängigkeit),
+  nur über die Recorder-API.
 
 ## 6 Nebenläufigkeit und Last (AK-6, AK-7)
 
