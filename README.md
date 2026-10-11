@@ -36,7 +36,8 @@ and in the options dialog:
 - **Your current electricity price** (ct/kWh gross) and **levies and taxes** (ct/kWh gross).
 - **Dynamic tariff:** supplier markup (ct/kWh net) and extra base fee (EUR/year).
 - **Feed-in tariff** (ct/kWh).
-- **Battery data:** usable capacity of the movable storage, planned extension (kWh), its cost (EUR),
+- **Battery data:** usable storage capacity (kWh, without reserves and manufacturer limits), usable capacity of a planned
+  extension (kWh), its cost (EUR),
   round-trip efficiency, power (C-rate), wear cost.
 
 ## Installation
@@ -96,8 +97,8 @@ und im Optionsdialog ein:
 - **Ihr heutiger Strompreis** (ct/kWh brutto) und **Umlagen und Steuern** (ct/kWh brutto).
 - **Dynamischer Tarif:** Aufschlag des Lieferanten (ct/kWh netto) und Mehr-Grundgebühr (€/Jahr).
 - **Einspeisevergütung** (ct/kWh).
-- **Speicherdaten:** nutzbare Kapazität des verschiebbaren Speichers, geplante Erweiterung (kWh) und deren
-  Kosten (€), Wirkungsgrad, Leistung (C-Rate), Verschleißkosten.
+- **Speicherdaten:** nutzbare Speicherkapazität (kWh, ohne Reserven und Herstellergrenzen), nutzbare Kapazität einer
+  geplanten Erweiterung (kWh) und deren Kosten (€), Wirkungsgrad, Leistung (C-Rate), Verschleißkosten.
 
 ### Installation
 

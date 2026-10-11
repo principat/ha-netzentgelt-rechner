@@ -243,4 +243,4 @@ Regeln:
 Im Ziel-HA existieren aus der Vorarbeit **temporär**: Helfer `input_number.m3_*`, `input_text.m3_info`
 und im Dashboard `dashboard-strompreis` die Ansicht „Lohnt es sich?“ (liest diese Helfer). Nach
 Inbetriebnahme: Ansicht auf die neuen Sensoren umstellen (`examples/de/dashboard.yaml`, `examples/en/dashboard.yaml`), Helfer
-löschen. Siehe `05-vorwissen-und-fakten.md`.
+löschen.

@@ -143,10 +143,10 @@
         "name": "Wirkungsgrad Speicher (Laden und Entladen)"
       },
       "flex_kwh": {
-        "name": "Vorhandener verschiebbarer Speicher (nutzbar)"
+        "name": "Nutzbare Speicherkapazität (vorhanden)"
       },
       "extra_kwh": {
-        "name": "Speichererweiterung (nutzbar)"
+        "name": "Nutzbare Kapazität der Speichererweiterung"
       },
       "c_rate": {
         "name": "Speicherleistung (C-Rate)"

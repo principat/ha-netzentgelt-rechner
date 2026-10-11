@@ -21,8 +21,7 @@ eines bestimmten Netzbetreibers. Zusätzlich liefert sie das **Netzentgelt Modul
 
 Ein Privathaushalt mit Home Assistant (inkl. Energie-Dashboard bzw. Langzeitstatistiken) und
 - einer **PV-Anlage** (Einspeisung ins Netz, ggf. mit Einspeisevergütung),
-- mindestens einem **Batteriespeicher**; ein Teil davon, der aus dem Netz laden und ins Haus entladen darf,
-  gilt als „verschiebbar“ (§3),
+- mindestens einem **Batteriespeicher** mit einer **nutzbaren Speicherkapazität** (§3),
 - einem **Netzbezugs- und einem Einspeisezähler**, deren Energiewerte als Langzeitstatistik vorliegen,
 - optional einem Sensor mit dem **Börsenpreis** (Day-Ahead, netto) für die Szenarien mit dynamischem Tarif.
 
@@ -31,8 +30,7 @@ gemessene Verbrauchsprofil ein. Ein intelligentes Messsystem (iMSys) ist Vorauss
 Praxis, wird aber von der Integration nicht geprüft.
 
 Die Standardwerte der Eingaben (§8) und die Zeitfenster (§7) sind **Beispielwerte** und müssen vom Nutzer
-anhand des Preisblatts des eigenen Netzbetreibers und des eigenen Tarifs angepasst werden. Messwerte und
-Hintergründe der Referenzanlage des Autors: `05-vorwissen-und-fakten.md`.
+anhand des Preisblatts des eigenen Netzbetreibers und des eigenen Tarifs angepasst werden.
 
 ## 3 Begriffe
 
@@ -44,9 +42,9 @@ Hintergründe der Referenzanlage des Autors: `05-vorwissen-und-fakten.md`.
 | Tarifzeit | Eintrag der Liste in §7: Stufe (HT oder NT), Start- und Enddatum, Start- und Endstunde. Alle Zeiten ohne Eintrag sind Standardstufe |
 | Dynamischer Tarif | Energiepreis = Börsenpreis (Day-Ahead) + Aufschlag; Netzentgelt, Umlagen, Steuern kommen dazu |
 | Börsenpreis (Spot) | Netto, €/kWh, Quelle `sensor.epex_preis_verlauf` (Langzeitstatistik, stündlich gemittelt) |
-| Verschiebbarer Speicher | Speicherkapazität, die aus dem Netz laden und ins Haus entladen darf |
+| Nutzbare Speicherkapazität | Kapazität des Speichers in kWh, die tatsächlich nutzbar ist, also ohne Reserven und Herstellergrenzen (z. B. 15 kWh Brutto × 0,9) |
 | Passiv | Nur der Tarif ändert sich; das Verbrauchsprofil bleibt wie im Basiszeitraum |
-| Optimiert | Zusätzlich fährt der verschiebbare Speicher täglich preisoptimal |
+| Optimiert | Zusätzlich fährt der Speicher mit seiner nutzbaren Kapazität täglich preisoptimal |
 
 ## 4 Szenarien
 
@@ -65,7 +63,7 @@ mit `e_fix = fixed − st − umlagen` (Energieanteil des heutigen Festpreises, 
 Jedes der Szenarien S2–S4 wird in **drei Varianten** gerechnet:
 
 - **passiv**: gleiches Profil, nur Tarifänderung.
-- **mit Speicher**: plus tägliche Optimierung mit `flex_kwh` verschiebbarem Speicher.
+- **mit Speicher**: plus tägliche Optimierung mit der nutzbaren Speicherkapazität `flex_kwh`.
 - **mit Erweiterung**: Optimierung mit `flex_kwh + extra_kwh`.
 
 Abgeleitet: **Mehrwert der Erweiterung** = (mit Erweiterung) − (mit Speicher) und
@@ -110,7 +108,7 @@ Bezugs-/Einspeiseprofil des Tages als Rest nach dem vorhandenen System:
 
 Bewusste Vereinfachungen (müssen im Dashboard sichtbar benannt sein): Preise des Tages sind im Voraus
 bekannt; keine Prognosefehler; vorhandener Speicherbetrieb ist im Basisprofil enthalten (der
-verschiebbare Speicher wird „oben drauf“ gerechnet); keine iMSys-/Steuerboxkosten.
+Speicher wird mit seiner nutzbaren Kapazität „oben drauf“ gerechnet); keine iMSys-/Steuerboxkosten.
 
 ## 7 Tarifzeiten Netzentgelt
 
@@ -166,8 +164,8 @@ Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein E
 | m3_base_delta | Zusatz-Grundpreis Modul 3 | €/Jahr | 0 | **unbekannt** |
 | feedin | Einspeisevergütung | ct/kWh | 6,29 | Beispiel; tatsächlichen anzulegenden Wert bzw. Vergütung eintragen |
 | eta_rt | Wirkungsgrad Speicher | % | 88 | Annahme |
-| flex_kwh | verschiebbarer Speicher (nutzbar) | kWh | 13,5 | Beispiel: 15 kWh × 0,9 nutzbar |
-| extra_kwh | Erweiterung (nutzbar) | kWh | 14,4 | Beispiel: 16 kWh × 0,9 nutzbar |
+| flex_kwh | Nutzbare Speicherkapazität (vorhanden) | kWh | 13,5 | Beispiel: 15 kWh × 0,9 nutzbar |
+| extra_kwh | Nutzbare Kapazität der Speichererweiterung | kWh | 14,4 | Beispiel: 16 kWh × 0,9 nutzbar |
 | c_rate | Leistung | 1/h | 0,5 | Annahme |
 | grid_import_kw | Netzanschluss: maximale Bezugsleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Hauptsicherung, Anschlussvertrag) |
 | grid_export_kw | Netzanschluss: maximale Einspeiseleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Netzbetreiber, ggf. Einspeisebegrenzung) |

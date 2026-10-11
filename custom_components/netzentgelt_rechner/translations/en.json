@@ -143,10 +143,10 @@
         "name": "Storage efficiency (charge and discharge)"
       },
       "flex_kwh": {
-        "name": "Existing shiftable storage (usable)"
+        "name": "Usable storage capacity (existing)"
       },
       "extra_kwh": {
-        "name": "Storage expansion (usable)"
+        "name": "Usable capacity of the storage expansion"
       },
       "c_rate": {
         "name": "Storage power (C-rate)"
