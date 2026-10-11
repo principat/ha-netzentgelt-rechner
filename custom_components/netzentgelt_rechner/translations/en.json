@@ -1,0 +1,124 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Grid fee calculator",
+        "description": "Choose the sensors that hold the long-term statistics.",
+        "data": {
+          "import_entity": "Meter reading import",
+          "export_entity": "Meter reading export",
+          "price_entity": "Electricity price history"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entity not found (neither a state nor statistics)."
+    },
+    "abort": {
+      "single_instance_allowed": "The grid fee calculator can only be set up once."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Source sensors",
+        "data": {
+          "import_entity": "Meter reading import",
+          "export_entity": "Meter reading export",
+          "price_entity": "Electricity price history"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entity not found (neither a state nor statistics)."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "netzentgelt": {
+        "name": "Grid fee module 3"
+      },
+      "wirtschaftlichkeit": {
+        "name": "Profitability",
+        "state": {
+          "nicht_berechnet": "Not calculated",
+          "rechnet": "Calculating",
+          "fertig": "Done",
+          "fehler": "Error"
+        }
+      }
+    },
+    "number": {
+      "fixed": {
+        "name": "Current energy price (gross)"
+      },
+      "st": {
+        "name": "Grid fee standard stage (gross)"
+      },
+      "nt": {
+        "name": "Grid fee low tariff (gross)"
+      },
+      "ht": {
+        "name": "Grid fee high tariff (gross)"
+      },
+      "levies": {
+        "name": "Levies and taxes (gross)"
+      },
+      "vat": {
+        "name": "VAT"
+      },
+      "markup": {
+        "name": "Dynamic tariff markup (net)"
+      },
+      "dyn_base": {
+        "name": "Extra base fee dynamic tariff"
+      },
+      "rebate": {
+        "name": "Module 1 flat rebate"
+      },
+      "m3_base_delta": {
+        "name": "Extra base price module 3"
+      },
+      "feedin": {
+        "name": "Feed-in tariff"
+      },
+      "eta_rt": {
+        "name": "Storage efficiency (charge and discharge)"
+      },
+      "flex_kwh": {
+        "name": "Existing shiftable storage (usable)"
+      },
+      "extra_kwh": {
+        "name": "Storage expansion (usable)"
+      },
+      "c_rate": {
+        "name": "Storage power (C-rate)"
+      },
+      "wear": {
+        "name": "Storage wear cost"
+      },
+      "invest": {
+        "name": "Cost of storage expansion"
+      }
+    },
+    "text": {
+      "zeitfenster_q1": {
+        "name": "Time window Q1"
+      },
+      "zeitfenster_q2": {
+        "name": "Time window Q2"
+      },
+      "zeitfenster_q3": {
+        "name": "Time window Q3"
+      },
+      "zeitfenster_q4": {
+        "name": "Time window Q4"
+      }
+    },
+    "button": {
+      "neu_berechnen": {
+        "name": "Recalculate"
+      }
+    }
+  }
+}

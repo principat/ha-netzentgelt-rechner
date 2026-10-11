@@ -1,0 +1,17 @@
+# Beispiel-Ansicht; Entitäts-IDs nach Einrichtung anpassen
+title: Lohnt es sich?
+path: wirtschaftlichkeit
+cards:
+  - type: entities
+    title: Annahmen
+    entities:
+      - number.netzentgelt_rechner_fixed
+      - number.netzentgelt_rechner_ht
+      - number.netzentgelt_rechner_nt
+      - text.netzentgelt_rechner_zeitfenster_q1
+      - button.netzentgelt_rechner_neu_berechnen
+  - type: entities
+    title: Ergebnis
+    entities:
+      - sensor.netzentgelt_rechner_wirtschaftlichkeit
+      - sensor.netzentgelt_rechner_netzentgelt

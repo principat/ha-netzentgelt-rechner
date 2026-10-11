@@ -1,0 +1,227 @@
+# 02 Technische Spezifikation
+
+Bezug: `01-fachliche-spezifikation.md` (AK-n). Zielplattform: Home Assistant Core 2026.10.x
+(Python 3.14), Mindestversion 2026.2.0, Betriebssystem HAOS auf Raspberry Pi 5 (aarch64), Recorder
+mit **MariaDB**.
+
+## 1 Architektur
+
+```
+                       ┌────────────────────────── Home Assistant ──────────────────────────┐
+ Dashboard ─ UI ──────▶│ number/text/button Entitäten ─▶ Hub (runtime_data) ◀─ Zeitplaner     │
+                       │      ▲ dispatcher                 │  │   │                          │
+                       │      │                            │  │   └─ Store (.storage)        │
+ sensor.netzentgelt ◀──┼──────┘   calc.fees (rein)  ◀──────┘  │                              │
+ sensor.wirtschaft. ◀──┼───────── Ergebnis/Status             ▼ Executor-Thread              │
+                       │                               Recorder.statistics_during_period     │
+                       │                               calc.engine (rein, DP)                 │
+                       └──────────────────────────────────────────────────────────────────────┘
+```
+
+- `Hub` (ein Objekt je Config-Entry, `entry.runtime_data`) hält Parameter, Zeitfenster, Ergebnisse,
+  Status; ist die einzige Schnittstelle der Entitäten zum Zustand.
+- Entitäten sind dünn: lesen aus dem Hub, schreiben über Hub-Methoden, aktualisieren sich über
+  einen Dispatcher-Signal `netzentgelt_rechner_update`.
+- `calc/` ist reines Python ohne HA-Abhängigkeit.
+
+## 2 Repository-Layout
+
+```
+custom_components/netzentgelt_rechner/
+  __init__.py        setup/unload, Plattformen, Hub anlegen, Zeitplaner
+  hub.py             Hub: Parameter, Store, Single-Flight-Berechnung, Zeitplan, Dispatcher
+  calc/
+    __init__.py
+    fees.py          Stufen, Quartal, Preise, Verlaufs-Slots (pur)
+    engine.py        build_days, evaluate, dp_day (pur)
+    models.py        dataclasses/TypedDicts: Params, Day, Result
+  data.py            Recorder-Zugriff (Statistiken laden, _ts-Normalisierung, Zeitraum)
+  entity.py          Basisklasse der Entitäten (Gerät, Dispatcher)
+  diagnostics.py     Diagnostics-Platform
+  config_flow.py     ConfigFlow + OptionsFlow (Quellsensoren)
+  sensor.py          NetzentgeltSensor, WirtschaftlichkeitSensor
+  number.py  text.py  button.py
+  const.py  manifest.json  strings/translations (de.json, en.json)  icons.json
+tests/unit/ tests/integration/ tests/e2e/ fixtures/
+reference/           Prototyp (zum Portieren, nicht ausliefern)
+docs/  scripts/  .github/workflows/  hacs.json  pyproject.toml  CHANGELOG.md
+examples/dashboard.yaml
+```
+
+## 3 Datenmodell
+
+### 3.1 Parameter
+`const.NUMBER_PARAMS` (siehe Seed `custom_components/netzentgelt_rechner/const.py`, Name, Einheit,
+Min/Max/Schritt/Standard). Intern wird in `calc.models.Params` auf SI-nahe Einheiten umgerechnet:
+€/kWh, Anteil statt %, `vat` als Faktor `1 + p/100`, `eta_rt` als Anteil.
+
+### 3.2 Zeitfenster
+`windows: dict[str, str]` Schlüssel `Q1..Q4`, Wert 24 Zeichen aus `{N,S,H}`.
+
+### 3.3 Erweiterbarkeit Quartalspreise (F-2)
+`fees.price(stage, quarter, params)` ist die **einzige** Stelle, die einen Stufenpreis ermittelt;
+heute ignoriert sie `quarter`. Quartalspreise später = neue Number-Entitäten `nt_q1…` ohne
+Änderung der Aufrufer.
+
+### 3.4 Persistenz
+`homeassistant.helpers.storage.Store`, Schlüssel `netzentgelt_rechner.<entry_id>`, Version 1:
+`{"params": {...}, "windows": {...}, "results": {...}|null, "status": "...", "error": null}`.
+Verzögertes Speichern (`async_delay_save`, 5 s) bei Parameteränderung, sofortiges nach Berechnung.
+Migration: `version`-Feld; unbekannte Schlüssel ignorieren, fehlende mit Standard füllen.
+
+## 4 Entitäten
+
+Gerät: `DeviceInfo(identifiers={(DOMAIN, entry_id)}, name="Netzentgelt-Rechner", entry_type=SERVICE)`.
+Alle `has_entity_name=True`, `unique_id = f"{entry_id}_{key}"`.
+
+| Plattform | key | Name | Einheit | Kategorie | Hinweis |
+|---|---|---|---|---|---|
+| sensor | `netzentgelt` | Netzentgelt Modul 3 | ct/kWh | – | state_class measurement; siehe 4.1 |
+| sensor | `wirtschaftlichkeit` | Wirtschaftlichkeit | – | – | device_class enum; siehe 4.2 |
+| number | je `NUMBER_PARAMS`-Schlüssel | Namen laut Const | laut Const | config | `mode=box`, Änderung → Hub |
+| text | `zeitfenster_q1` … `q4` | Zeitfenster Q1 … Q4 | – | config | `pattern=^[NSH]{24}$`, min=max=24 |
+| button | `neu_berechnen` | Neu berechnen | – | – | startet `hub.async_calculate()` als Hintergrund-Task |
+
+Empfehlung: nach Installation Entity-IDs über die Registry auf kurze Namen setzen
+(`sensor.netzentgelt_modul3`, `sensor.wirtschaftlichkeit`) – nicht Teil des Codes, aber im README
+beschreiben und im E2E-Test **nicht** voraussetzen (Suche über `unique_id`).
+
+### 4.1 Attribute `sensor.netzentgelt`
+
+```json
+{
+  "stufe": "Hochtarif",
+  "quartal": "Q4",
+  "preise": {"nt": 4.41, "st": 11.06, "ht": 16.07},
+  "zeitplan": {"Q1": "NNNNNSSSSSSHHSSSSHHSSSSN", "Q2": "…", "Q3": "…", "Q4": "…"},
+  "data": [
+    {"start_time": "2026-10-10T00:00:00+02:00", "end_time": "2026-10-10T01:00:00+02:00",
+     "stufe": "N", "price_per_kwh": 0.0441}
+  ]
+}
+```
+- `price_per_kwh` in **€/kWh brutto** (kompatibel zu den EPEX-Sensoren), Zustand in **ct/kWh**.
+- `data`: heute 00:00 bis übermorgen 00:00 lokal (48, an Umstellungstagen 47/49 Slots).
+- `_unrecorded_attributes = frozenset({"data", "zeitplan"})`.
+- Aktualisierung: bei jeder Viertelstunde (`async_track_time_change`, Sekunde 2) und bei
+  Parameter-/Zeitfensteränderung.
+
+### 4.2 Attribute `sensor.wirtschaftlichkeit`
+
+Zustände: `nicht_berechnet` | `rechnet` | `fertig` | `fehler`.
+
+```json
+{
+  "berechnet_am": "2026-10-11T03:30:12+02:00",
+  "dauer_s": 7.4,
+  "basis": {"von": "2025-10-01", "bis": "2026-09-30", "tage": 365,
+            "bezug_kwh": 5312.3, "einspeisung_kwh": 10234.0, "boersenmittel_ct": 11.2},
+  "szenarien": {
+    "modul1":      {"passiv": 162.9},
+    "modul3":      {"passiv": 0, "speicher": 0, "erweiterung": 0, "mehrwert": 0, "amortisation_jahre": null},
+    "dynamisch":   {"…": 0},
+    "kombination": {"…": 0}
+  },
+  "annahmen": {"fixed": 34.1, "…": "…"},
+  "fehler": null
+}
+```
+Werte auf 2 Nachkommastellen; `amortisation_jahre = null` wenn Mehrwert ≤ 1 €/Jahr.
+
+## 5 Datenzugriff (Recorder)
+
+```python
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.statistics import statistics_during_period
+
+rows = await get_instance(hass).async_add_executor_job(
+    statistics_during_period, hass, start_utc, end_utc, {id1, id2}, "hour", None, {"change"}
+)
+```
+- Zeitraum: letzte 12 **volle lokale Monate** (`[1. des Monats vor 12 Monaten, 1. des aktuellen Monats)`).
+- Bezug/Einspeisung: Typ `change` (Zähler `total_increasing`), Preis: Typ `mean`. `start` ist je nach
+  HA-Version Sekunden (float) – im Test gegen die gepinnte Version prüfen und in **einer** Funktion
+  normalisieren (`_ts(row)`).
+- `None`-Werte → 0 (Verbrauch) bzw. Stunde überspringen (Preis). Negative `change` (Zählerreset) → 0.
+- Tag gilt als vollständig, wenn 23, 24 oder 25 Stunden mit Preis vorliegen (Zeitumstellung).
+- Lokale Zeit: `zoneinfo.ZoneInfo(hass.config.time_zone)`.
+- **Nie** direkt auf die Datenbank zugreifen (MariaDB, Last), nur über die Recorder-API.
+
+## 6 Nebenläufigkeit und Last (AK-6, AK-7)
+
+- `Hub.async_calculate()`: `asyncio.Lock` (nicht blockierend: `if lock.locked(): return`), Status
+  `rechnet`, danach `fertig`/`fehler`; immer im `finally` speichern und Dispatcher feuern.
+- Datenabruf im Recorder-Executor (siehe §5), Rechnung in `hass.async_add_executor_job(calc.evaluate, …)`.
+- `calc.evaluate(days, params, *, pause=None)` ruft nach jeder Tagesoptimierung (je Szenario und Speichergröße) und nach jedem Tag `pause()` auf; der Hub übergibt
+  `lambda: time.sleep(0.002)`. Dadurch gibt der Thread die GIL regelmäßig frei; Ziel: Event-Loop-
+  Verzögerung < 50 ms (E2E-Messung).
+- Keine Berechnung unmittelbar beim Start: `async_at_started` + `async_call_later(300)`; nur falls
+  `results is None` (AK-9).
+- Monatlicher Lauf: `async_track_time_change(hour=3, minute=30, second=0)`, im Callback `day == 1`
+  prüfen (lokale Zeit).
+- Button und Zeitplaner starten die Berechnung via `entry.async_create_background_task`.
+- Timeout-Wächter: Gesamtlauf > 120 s → abbrechen (Flag `cancel` in `pause()`), Status `fehler`.
+
+## 7 Rechenkern (`calc/`)
+
+Portierung von `reference/modul3_calc_prototype.py` (dort mit Brute-Force-Test verifiziert). Öffentliche API:
+
+```python
+def stage(windows: dict[str,str], quarter: str, hour: int) -> str            # 'N'|'S'|'H'
+def import_price(scenario: str, p: Params, windows, quarter: str, hour: int, spot: float) -> float
+def build_days(imp, exp, price, tz) -> dict[date, list[Hour]]                 # nur vollständige Tage
+def dp_day(cbuy, fi, imp, exp, cap_kwh, p: Params) -> float                   # ≤ 0 = Gewinn
+def evaluate(days, p: Params, windows, *, pause=None) -> Result
+def slots(now_local: datetime, p: Params, windows) -> list[Slot]              # Netzentgelt-Verlauf
+```
+
+Regeln:
+- Preisformeln exakt wie Fach-Spec §4/§5. `netz(q,h)` über `stage` + `fees.price`.
+- `dp_day`: Rückwärtsinduktion über Füllstände `0..n` (Raster `step=1 kWh`), Aktionen
+  `k ∈ [-kd, kc]`; Kosten je Stunde und Aktion vorab tabellieren; Laden: `bus = k·q/η`,
+  `ab = min(exp, bus)`, Kosten `(bus-ab)·cbuy + ab·fi + wear·k·q`; Entladen: `d = |k|·q·η`,
+  `use = min(d, imp)`, Kosten `−use·cbuy − (d−use)·fi + wear·|k|·q`. Rückgabe `V[0][0]`.
+- `η = √eta_rt`; `kc = max(1, int(c_rate·cap·η/q))`, `kd = max(1, int(c_rate·cap/(η·q)))`.
+- `fi = feedin` falls `spot ≥ 0`, sonst 0.
+- Tage mit `Σimp ≤ 0.5` überspringen. Skalierung `365/Anzahl_Tage`.
+- **Bekannte Eigenschaft**: Ergebnis hängt nur über `imp/exp` vom vorhandenen System ab; kein
+  Zustand zwischen Tagen.
+
+## 8 Config Flow
+
+- Einmalig (`single_config_entry`), Schritt `user`: drei `EntitySelector(domain="sensor")` für
+  `import_entity`, `export_entity`, `price_entity` mit Standardwerten aus `const`.
+  Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
+  (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).
+- OptionsFlow: dieselben drei Felder; Änderung → Entry neu laden.
+- Alle Texte in `translations/{de,en}.json`; Standard Deutsch.
+
+## 9 Fehlerbehandlung und Logging
+
+- Erwartbare Fehler (keine Statistik, < 200 Tage, Preise fehlen) → `fehler` + Klartext in Attribut
+  `fehler`, Log WARNING einzeilig, **kein** Traceback.
+- Unerwartete Fehler → `_LOGGER.exception`, Status `fehler`, Meldung „Interner Fehler, siehe Log“.
+- Logger `custom_components.netzentgelt_rechner`; DEBUG: Dauer je Phase, Anzahl Tage/Zeilen.
+- Diagnostics-Platform (`diagnostics.py`): Parameter, Status, Basisdaten (keine Verbrauchsreihen).
+
+## 9a Kompatibilität und Stolpersteine
+
+- Attribut-Größenlimit des Recorders 16 KB → `_unrecorded_attributes` (siehe 4.1).
+- `statistics_during_period` ist eine **synchrone** Funktion und gehört in den Recorder-Executor.
+- Zeitumstellung: Tage mit 23/25 Stunden; Quartalszuordnung nach lokalem Datum.
+- Number-Entitäten mit `mode=box`; Float-Rundung auf Schrittweite im `native_value`.
+- Text-Entitäten validieren per `pattern`; zusätzlich im Hub (Fehler `ServiceValidationError`).
+
+## 10 Packaging
+
+- `hacs.json`: `{"name": "Netzentgelt-Rechner", "homeassistant": "2026.2.0", "zip_release": true,
+  "filename": "netzentgelt_rechner.zip"}`; `manifest.json` Version wird vom Release-Tool gesetzt.
+- Auslieferung ausschließlich `custom_components/netzentgelt_rechner/` (Zip-Wurzel = Inhalt dieses Ordners).
+- Installation: HACS (Custom Repository) oder manuell nach `/config/custom_components/`.
+
+## 11 Migration vom Zwischenstand
+
+Im Ziel-HA existieren aus der Vorarbeit **temporär**: Helfer `input_number.m3_*`, `input_text.m3_info`
+und im Dashboard `dashboard-strompreis` die Ansicht „Lohnt es sich?“ (liest diese Helfer). Nach
+Inbetriebnahme: Ansicht auf die neuen Sensoren umstellen (`examples/dashboard.yaml`), Helfer
+löschen. Siehe `05-vorwissen-und-fakten.md`.

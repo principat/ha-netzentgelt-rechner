@@ -1,0 +1,11 @@
+{
+  "entity": {
+    "sensor": {
+      "netzentgelt": { "default": "mdi:transmission-tower" },
+      "wirtschaftlichkeit": { "default": "mdi:calculator-variant" }
+    },
+    "button": {
+      "neu_berechnen": { "default": "mdi:refresh" }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Netzentgelt-Rechner",
+  "homeassistant": "2026.2.0",
+  "zip_release": true,
+  "filename": "netzentgelt_rechner.zip",
+  "render_readme": true
+}

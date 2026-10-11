@@ -1,0 +1,124 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Netzentgelt-Rechner",
+        "description": "Wähle die Sensoren mit den Langzeitstatistiken.",
+        "data": {
+          "import_entity": "Zählerstand Bezug",
+          "export_entity": "Zählerstand Einspeisung",
+          "price_entity": "Strompreis-Verlauf"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik)."
+    },
+    "abort": {
+      "single_instance_allowed": "Der Netzentgelt-Rechner kann nur einmal eingerichtet werden."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Quellsensoren",
+        "data": {
+          "import_entity": "Zählerstand Bezug",
+          "export_entity": "Zählerstand Einspeisung",
+          "price_entity": "Strompreis-Verlauf"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entität nicht gefunden (weder Zustand noch Statistik)."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "netzentgelt": {
+        "name": "Netzentgelt Modul 3"
+      },
+      "wirtschaftlichkeit": {
+        "name": "Wirtschaftlichkeit",
+        "state": {
+          "nicht_berechnet": "Nicht berechnet",
+          "rechnet": "Rechnet",
+          "fertig": "Fertig",
+          "fehler": "Fehler"
+        }
+      }
+    },
+    "number": {
+      "fixed": {
+        "name": "Arbeitspreis heute (brutto)"
+      },
+      "st": {
+        "name": "Netzentgelt Standardstufe (brutto)"
+      },
+      "nt": {
+        "name": "Netzentgelt Niedertarif (brutto)"
+      },
+      "ht": {
+        "name": "Netzentgelt Hochtarif (brutto)"
+      },
+      "levies": {
+        "name": "Umlagen und Steuern (brutto)"
+      },
+      "vat": {
+        "name": "Mehrwertsteuer"
+      },
+      "markup": {
+        "name": "Aufschlag dynamischer Tarif (netto)"
+      },
+      "dyn_base": {
+        "name": "Mehr-Grundgebuehr dynamischer Tarif"
+      },
+      "rebate": {
+        "name": "Modul-1-Pauschale"
+      },
+      "m3_base_delta": {
+        "name": "Zusatz-Grundpreis Modul 3"
+      },
+      "feedin": {
+        "name": "Einspeisevergütung"
+      },
+      "eta_rt": {
+        "name": "Wirkungsgrad Speicher (Laden und Entladen)"
+      },
+      "flex_kwh": {
+        "name": "Vorhandener verschiebbarer Speicher (nutzbar)"
+      },
+      "extra_kwh": {
+        "name": "Speichererweiterung (nutzbar)"
+      },
+      "c_rate": {
+        "name": "Speicherleistung (C-Rate)"
+      },
+      "wear": {
+        "name": "Verschleißkosten Speicher"
+      },
+      "invest": {
+        "name": "Kosten der Speichererweiterung"
+      }
+    },
+    "text": {
+      "zeitfenster_q1": {
+        "name": "Zeitfenster Q1"
+      },
+      "zeitfenster_q2": {
+        "name": "Zeitfenster Q2"
+      },
+      "zeitfenster_q3": {
+        "name": "Zeitfenster Q3"
+      },
+      "zeitfenster_q4": {
+        "name": "Zeitfenster Q4"
+      }
+    },
+    "button": {
+      "neu_berechnen": {
+        "name": "Neu berechnen"
+      }
+    }
+  }
+}

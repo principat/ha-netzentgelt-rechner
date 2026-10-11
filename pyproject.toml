@@ -1,0 +1,41 @@
+[project]
+name = "netzentgelt-rechner"
+version = "0.0.0"  # maßgeblich ist manifest.json
+requires-python = ">=3.13"
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-asyncio",
+  "pytest-homeassistant-custom-component",
+  "hypothesis",
+  "ruff",
+  "mypy",
+  "websockets",
+  "aiohttp",
+]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["reference"]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["custom_components"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "custom_components.netzentgelt_rechner.calc.*"
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = [".", "tests", "tests/e2e"]
+testpaths = ["tests/unit", "tests/integration"]
+addopts = "--cov=custom_components/netzentgelt_rechner/calc --cov-branch --cov-fail-under=95"
+markers = ["e2e: needs running HA container"]

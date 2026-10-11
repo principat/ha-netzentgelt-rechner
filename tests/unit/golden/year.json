@@ -1,0 +1,34 @@
+{
+  "basis": {
+    "bezug_kwh": 2526.1,
+    "boersenmittel_ct": 10.16,
+    "einspeisung_kwh": 4905.4,
+    "tage": 365
+  },
+  "szenarien": {
+    "dynamisch": {
+      "amortisation_jahre": null,
+      "erweiterung": 167.06,
+      "mehrwert": 0.0,
+      "passiv": -102.59,
+      "speicher": 167.06
+    },
+    "kombination": {
+      "amortisation_jahre": null,
+      "erweiterung": 382.54,
+      "mehrwert": 0.0,
+      "passiv": 107.25,
+      "speicher": 382.54
+    },
+    "modul1": {
+      "passiv": 162.91
+    },
+    "modul3": {
+      "amortisation_jahre": null,
+      "erweiterung": 437.65,
+      "mehrwert": 0.0,
+      "passiv": 209.84,
+      "speicher": 437.65
+    }
+  }
+}
