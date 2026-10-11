@@ -21,7 +21,7 @@ grid operator's price sheet.
 4. Adjust the assumptions on the device and press *Neu berechnen* (recalculate). The result appears in
    the *Wirtschaftlichkeit* (profitability) sensor; the current grid fee in the *Netzentgelt* sensor.
 
-Requires Home Assistant 2026.2.0 or newer and at least 200 complete days of statistics.
+License: MIT. Requires Home Assistant 2026.2.0 or newer and at least 200 complete days of statistics.
 
 Dashboard example: [`examples/en/dashboard.yaml`](examples/en/dashboard.yaml).
 
@@ -54,7 +54,7 @@ Preisblatts Ihres Netzbetreibers prüfen.
 4. Annahmen am Gerät anpassen und *Neu berechnen* drücken. Das Ergebnis steht im Sensor
    *Wirtschaftlichkeit*, das aktuelle Netzentgelt im Sensor *Netzentgelt*.
 
-Voraussetzung: Home Assistant 2026.2.0 oder neuer und mindestens 200 vollständige Tage Statistik.
+Lizenz: MIT. Voraussetzung: Home Assistant 2026.2.0 oder neuer und mindestens 200 vollständige Tage Statistik.
 
 Dashboard-Beispiel: [`examples/de/dashboard.yaml`](examples/de/dashboard.yaml).
 
