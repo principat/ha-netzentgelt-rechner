@@ -10,7 +10,8 @@ mkdir -p "$CFG/custom_components"
 cp -r custom_components/netzentgelt_rechner "$CFG/custom_components/"
 docker run -d --name ha-e2e --restart=always -p 8123:8123 -v "$CFG":/config \
   "ghcr.io/home-assistant/home-assistant:${VER}" >/dev/null
-trap 'docker logs ha-e2e > e2e-ha.log 2>&1; docker rm -f ha-e2e >/dev/null; rm -rf "$CFG"' EXIT
+# Files in $CFG are created by the container as root, so clean up as root as well (best effort).
+trap 'docker logs ha-e2e > e2e-ha.log 2>&1; docker rm -f ha-e2e >/dev/null; docker run --rm -v "$CFG":/cfg --entrypoint sh "ghcr.io/home-assistant/home-assistant:${VER}" -c "rm -rf /cfg/* /cfg/.[!.]*" >/dev/null 2>&1 || true; rm -rf "$CFG" 2>/dev/null || true' EXIT
 for _ in $(seq 1 90); do
   code="$(curl -s -o /dev/null -w '%{http_code}' localhost:8123/api/ || true)"
   [ "$code" = "401" ] || [ "$code" = "200" ] && break
