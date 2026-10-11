@@ -38,8 +38,8 @@ Stand 10.10.2026. „verifiziert“ = in der Umgebung geprüft; „Annahme“ = 
 | Flex-Speicher / Erweiterung | 13,5 / 14,4 kWh nutzbar | Annahme |
 | C-Rate | 0,5 | Annahme |
 | Erweiterungskosten | 1.500 € | Nutzerangabe |
-Zeitfenster sind quartalsweise konfigurierbar; Standard `NNNNNSSSSSSHHSSSSHHSSSSN` (Index = Stunde 0–23).
-Ob SachsenNetze Fenster je Quartal tatsächlich unterscheidet, ist offen (F-1); daher Quartale als Eingabe.
+Tarifzeiten sind als Liste mit Datums- und Stundenbereichen konfigurierbar; Beispiel: NT 23–5 Uhr, HT 11–13 und 17–19 Uhr.
+Ob SachsenNetze Zeiten je Quartal tatsächlich unterscheidet, ist offen (F-1); daher als Eingabe.
 
 ## 5 Stolpersteine
 - **Recorder:** Langzeitstatistik nur mit `state_class`. `statistics_during_period` ist blockierend →

@@ -41,7 +41,7 @@ Hintergründe der Referenzanlage des Autors: `05-vorwissen-und-fakten.md`.
 | Modul 1 | Pauschale Netzentgeltreduzierung für steuerbare Verbrauchseinrichtungen (§14a), € pro Jahr |
 | Modul 3 | Zeitvariable Netzentgelte in drei Stufen, nur zusammen mit Modul 1, braucht iMSys |
 | NT / ST / HT | Niedertarif / Standardstufe / Hochtarif (Arbeitspreis des Netzentgelts, ct/kWh) |
-| Zeitfenster | Zuordnung Stunde → Stufe, **je Quartal** (Q1–Q4) |
+| Tarifzeit | Eintrag der Liste in §7: Stufe (HT oder NT), Start- und Enddatum, Start- und Endstunde. Alle Zeiten ohne Eintrag sind Standardstufe |
 | Dynamischer Tarif | Energiepreis = Börsenpreis (Day-Ahead) + Aufschlag; Netzentgelt, Umlagen, Steuern kommen dazu |
 | Börsenpreis (Spot) | Netto, €/kWh, Quelle `sensor.epex_preis_verlauf` (Langzeitstatistik, stündlich gemittelt) |
 | Verschiebbarer Speicher | Speicherkapazität, die aus dem Netz laden und ins Haus entladen darf |
@@ -104,16 +104,43 @@ Bewusste Vereinfachungen (müssen im Dashboard sichtbar benannt sein): Preise de
 bekannt; keine Prognosefehler; vorhandener Speicherbetrieb ist im Basisprofil enthalten (der
 verschiebbare Speicher wird „oben drauf“ gerechnet); keine iMSys-/Steuerboxkosten.
 
-## 7 Quartalslogik Netzentgelt
+## 7 Tarifzeiten Netzentgelt
 
-- Für jedes Quartal Q1–Q4 gibt es ein eigenes 24-Zeichen-Zeitfenster. Standard in allen Quartalen:
-  `NNNNNSSSSSSHHSSSSHHSSSSN` (NT 23–5 Uhr, HT 11–13 und 17–19 Uhr, sonst ST) – **Annahme**, vom Nutzer
-  je Quartal änderbar.
+Der Nutzer pflegt eine **Liste von Tarifzeiten**, getrennt nach Hochtarif (HT) und Niedertarif (NT). Alle
+Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein Eintrag besteht aus:
+
+| Feld | Bedeutung |
+|---|---|
+| Stufe | Hochtarif oder Niedertarif |
+| Startdatum, Enddatum | konkrete Kalendertage inkl. Jahr, beide **einschließlich** (z. B. 01.01.2026 – 31.03.2026) |
+| Startstunde | 0–23, volle Stunde, ab der die Tarifzeit täglich gilt |
+| Endstunde | 1–24, volle Stunde, bis zu der sie gilt (**ausschließlich**; 17 bis 19 = 17:00–19:00 Uhr) |
+
+- **Über Mitternacht:** Ist die Endstunde kleiner als die Startstunde (z. B. 23 bis 5), gilt die Tarifzeit
+  an jedem Tag des Datumsbereichs von der Startstunde bis Mitternacht und von Mitternacht bis zur Endstunde.
+  Start- und Endstunde dürfen nicht gleich sein; 0 bis 24 bedeutet ganztägig.
+- **Keine Überschneidung:** Zwei Einträge dürfen sich weder im Datumsbereich noch in den Stunden
+  überschneiden (egal ob HT oder NT). Sonst wird der Eintrag mit einer verständlichen Meldung am betroffenen
+  Feld abgelehnt und nicht gespeichert.
+- **Eingabe:** im Optionsdialog der Integration als Liste: Eintrag hinzufügen, bearbeiten, löschen. Der
+  Dialog zeigt die aktuelle Liste. Intern wird bei Bedarf eine vollständige Zeittabelle (Datum × Stunde →
+  Stufe) aufgebaut; der Nutzer sieht sie nie.
+- **Standard:** beim ersten Einrichten steht eine Beispielliste für das laufende Kalenderjahr
+  (01.01.–31.12.): NT 23–5 Uhr, HT 11–13 Uhr, HT 17–19 Uhr – **Annahme**, vom Nutzer anzupassen.
 - Die Preise `nt`, `st`, `ht` gelten ganzjährig (siehe offene Frage F-2).
-- Quartal richtet sich nach der **lokalen** Zeit (Europe/Berlin), Zeitumstellung korrekt (23/25-Stunden-Tage).
-- Der **Netzentgelt-Sensor** liefert: aktuellen Preis, aktuelle Stufe, Quartal, die Preise, das
-  Quartals-Zeitfenster und einen Verlauf für heute und morgen (stündlich) im selben Format wie die
-  EPEX-Sensoren (`price_per_kwh`), damit Diagramme und HAEO ihn wie einen Preissensor nutzen können.
+- Datum und Stunde richten sich nach der **lokalen** Zeit (Europe/Berlin), Zeitumstellung korrekt
+  (23/25-Stunden-Tage).
+- **Netzentgelt-Sensor** (heute/morgen): wendet die Tarifzeiten mit **exaktem Datum** an. Liegt ein Tag in
+  keiner Tarifzeit (z. B. weil das Jahr nicht gepflegt ist), gilt dort die Standardstufe.
+- **Auswertung (Rückblick auf die letzten 12 Monate):** Die Tarifzeiten werden **nur nach Tag und Monat**
+  angewendet. Jeder Tag der Statistik wird dazu auf das Jahr der Berechnung abgebildet (29.02. auf 28.02.,
+  wenn das Jahr kein Schaltjahr ist) und dort nachgeschlagen. So gilt der aktuelle Tarif für den ganzen
+  Zeitraum, ohne dass Vorjahre gepflegt werden müssen.
+- Der Sensor liefert: aktuellen Preis, aktuelle Stufe, Quartal, die Preise, die Tarifzeiten und einen
+  Verlauf für heute und morgen (stündlich) im selben Format wie die EPEX-Sensoren (`price_per_kwh`),
+  damit Diagramme und Energiemanagementsysteme ihn wie einen Preissensor nutzen können.
+- **Übernahme aus Version 1.0.0:** Die früheren Quartals-Zeitfenster (24 Zeichen je Quartal) werden beim
+  ersten Laden verlustfrei in Tarifzeiten mit den Daten des Quartals im aktuellen Jahr umgewandelt.
 
 ## 8 Eingaben (im Dashboard editierbar)
 
@@ -136,7 +163,7 @@ verschiebbare Speicher wird „oben drauf“ gerechnet); keine iMSys-/Steuerboxk
 | c_rate | Leistung | 1/h | 0,5 | Annahme |
 | wear | Verschleiß | ct/kWh | 0 | Annahme |
 | invest | Kosten Erweiterung | € | 1500 | Beispiel; eigene Kosten eintragen |
-| zeitfenster Q1–Q4 | Stufenzuordnung je Stunde | Text, 24 Zeichen | siehe §7 | Annahme |
+| tarifzeiten | Liste der HT-/NT-Tarifzeiten | Liste (Optionsdialog) | siehe §7 | Annahme |
 
 Die Standardwerte stammen aus der Referenzanlage des Autors (Netzbetreiber SachsenNetze, Dresden, Stand 2026)
 und sind **Beispielwerte**. Wer einen anderen Netzbetreiber oder Tarif hat, trägt seine eigenen Werte ein.
@@ -146,10 +173,10 @@ Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezä
 ## 9 Ausgaben
 
 1. **Sensor „Netzentgelt Modul 3“**: Zustand = aktueller Preis (ct/kWh brutto); Attribute `stufe`,
-   `quartal`, `preise`, `zeitplan`, `data` (Verlauf heute+morgen).
+   `quartal`, `preise`, `zeitplan` (Liste der Tarifzeiten), `data` (Verlauf heute+morgen).
 2. **Sensor „Wirtschaftlichkeit“**: Zustand = Status (`nicht_berechnet`, `rechnet`, `fertig`, `fehler`);
    Attribute `berechnet_am`, `basis`, `szenarien`, `annahmen`, `fehler`.
-3. **Zahlen- und Text-Entitäten** für alle Eingaben (§8), **Button** „Neu berechnen“.
+3. **Zahlen-Entitäten** für alle Zahleneingaben (§8) und der **Optionsdialog** für die Tarifzeiten (§7), **Button** „Neu berechnen“.
 4. Ein mitgeliefertes **Dashboard-Beispiel** (YAML im Repo) mit: Tabelle der Szenarien, Balkendiagramm,
    Eingabekarte, Preisverlauf des Netzentgelts.
 
@@ -162,11 +189,11 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
 ## 11 Akzeptanzkriterien
 
 - **AK-1** Nach Einrichtung existieren alle Entitäten aus §9 unter einem Gerät „Netzentgelt-Rechner“.
-- **AK-2** Eingaben sind im Dashboard änderbar, werden validiert (Bereiche, Muster `^[NSH]{24}$`),
+- **AK-2** Zahleneingaben sind im Dashboard änderbar, werden validiert (Bereiche),
   überstehen einen HA-Neustart und lösen **keine** automatische Neuberechnung aus, aktualisieren aber
   den Netzentgelt-Sensor sofort.
-- **AK-3** Der Netzentgelt-Sensor liefert zu jeder Viertelstunde den richtigen Preis gemäß Quartal,
-  Stunde und Zeitumstellung; `data` enthält 24 (heute) + 24 (morgen) Stundenwerte, an Zeitumstellungstagen 23/25.
+- **AK-3** Der Netzentgelt-Sensor liefert zu jeder Viertelstunde den richtigen Preis gemäß Tarifzeiten (Datum,
+  Stunde) und Zeitumstellung; `data` enthält 24 (heute) + 24 (morgen) Stundenwerte, an Zeitumstellungstagen 23/25.
 - **AK-4** Die Optimierung (Tages-DP) stimmt in 100 % von ≥ 1000 zufälligen kleinen Fällen mit der
   Vollenumeration überein (Property-Test).
 - **AK-5** Für ein festes synthetisches Jahr entsprechen alle Szenario-Ergebnisse den Golden-Werten
@@ -182,6 +209,18 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
   Ergebnisse vorliegen – 5 Minuten nach HA-Start.
 - **AK-10** Ergebnisse überstehen HA-Neustart (persistiert), Zustand bleibt `fertig`.
 - **AK-11** Konfigurierbare Quellsensoren; Auswahl nicht vorhandener Entitäten wird abgelehnt.
+- **AK-13** Tarifzeiten lassen sich im Optionsdialog hinzufügen, bearbeiten und löschen. Die Änderung wirkt
+  sofort auf den Netzentgelt-Sensor, löst **keine** Neuberechnung aus und übersteht einen HA-Neustart.
+- **AK-14** Ungültige Tarifzeiten (Enddatum vor Startdatum, Start- gleich Endstunde, Stunden außerhalb des
+  Bereichs, Überschneidung mit einem anderen Eintrag) werden mit lokalisierter Meldung am betroffenen Feld
+  abgelehnt; nichts wird gespeichert, die Integration bleibt stabil.
+- **AK-15** Tarifzeiten über Mitternacht (z. B. 23–5 Uhr) und ganztägige (0–24 Uhr) werden korrekt angewendet;
+  alle Zeiten ohne Tarifzeit sind Standardstufe.
+- **AK-16** Die Auswertung wendet Tarifzeiten nach Tag/Monat auf das Jahr der Berechnung an (29.02. → 28.02.
+  in Nichtschaltjahren); die Ergebnisse mit den früheren Quartals-Zeitfenstern bleiben dabei identisch
+  (Golden-Test).
+- **AK-17** Gespeicherte Quartals-Zeitfenster aus Version 1.0.0 werden verlustfrei in Tarifzeiten
+  umgewandelt; veraltete Zeitfenster-Entitäten werden entfernt.
 - **AK-12** Deutsche Oberfläche; alle Texte übersetzbar (`translations/de.json`, `en.json`).
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)

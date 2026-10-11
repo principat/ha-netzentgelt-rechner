@@ -38,9 +38,9 @@ custom_components/netzentgelt_rechner/
   data.py            Recorder-Zugriff (Statistiken laden, _ts-Normalisierung, Zeitraum)
   entity.py          Basisklasse der Entitäten (Gerät, Dispatcher)
   diagnostics.py     Diagnostics-Platform
-  config_flow.py     ConfigFlow + OptionsFlow (Quellsensoren)
+  config_flow.py     ConfigFlow + OptionsFlow (Quellsensoren, Tarifzeiten-Liste)
   sensor.py          NetzentgeltSensor, WirtschaftlichkeitSensor
-  number.py  text.py  button.py
+  number.py  button.py
   const.py  manifest.json  strings/translations (de.json, en.json)  icons.json
 tests/unit/ tests/integration/ tests/e2e/ fixtures/
 reference/           Prototyp (zum Portieren, nicht ausliefern)
@@ -55,8 +55,16 @@ examples/{de,en}/dashboard.yaml
 Min/Max/Schritt/Standard). Intern wird in `calc.models.Params` auf SI-nahe Einheiten umgerechnet:
 €/kWh, Anteil statt %, `vat` als Faktor `1 + p/100`, `eta_rt` als Anteil.
 
-### 3.2 Zeitfenster
-`windows: dict[str, str]` Schlüssel `Q1..Q4`, Wert 24 Zeichen aus `{N,S,H}`.
+### 3.2 Tarifzeiten
+`calc.fees.TariffWindow` (frozen dataclass): `stage` (`"N"`|`"H"`), `start`/`end` (`date`, beide inklusive),
+`from_hour` 0–23, `to_hour` 1–24 (exklusiv; `to_hour < from_hour` = über Mitternacht, `==` verboten).
+`windows: list[TariffWindow]` im Hub. `validate_windows(windows)` wirft `WindowError(code, index, other)`
+mit `code` ∈ `stage | date_order | hour_range | hours_equal | overlap`.
+- `stage(windows, day, hour) -> 'N'|'S'|'H'` (Standard `S`); `day_stages(windows, day) -> list[str]` (24 Zeichen,
+  für Schleifen). `project_day(day, year)`: gleiche Tag/Monat im `year`, 29.02. → 28.02.
+- `windows_from_quarters(quarters: Mapping[str,str], year)`: Umwandlung der alten 24-Zeichen-Fenster je Quartal
+  (zusammenhängende N-/H-Läufe, Lauf über Mitternacht zusammengeführt) – für die Übernahme aus v1.0.0 und Tests.
+- `DEFAULT_WINDOWS(year)`: NT 23–5, HT 11–13, HT 17–19, jeweils 01.01.–31.12. des Jahres.
 
 ### 3.3 Erweiterbarkeit Quartalspreise (F-2)
 `fees.price(stage, quarter, params)` ist die **einzige** Stelle, die einen Stufenpreis ermittelt;
@@ -65,8 +73,10 @@ heute ignoriert sie `quarter`. Quartalspreise später = neue Number-Entitäten `
 
 ### 3.4 Persistenz
 `homeassistant.helpers.storage.Store`, Schlüssel `netzentgelt_rechner.<entry_id>`, Version 1:
-`{"params": {...}, "windows": {...}, "results": {...}|null, "status": "...", "error": null}`.
+`{"params": {...}, "windows": [...], "results": {...}|null, "status": "...", "error": null}`.
 Verzögertes Speichern (`async_delay_save`, 5 s) bei Parameteränderung, sofortiges nach Berechnung.
+`windows` ist eine Liste von `{stufe, von, bis, stunde_von, stunde_bis}` (ISO-Daten). Ein `windows`-Dict
+(Quartals-Zeitfenster aus v1.0.0) wird beim Laden mit `windows_from_quarters(…, aktuelles Jahr)` umgewandelt.
 Migration: `version`-Feld; unbekannte Schlüssel ignorieren, fehlende mit Standard füllen.
 
 ## 4 Entitäten
@@ -79,7 +89,6 @@ Alle `has_entity_name=True`, `unique_id = f"{entry_id}_{key}"`.
 | sensor | `netzentgelt` | Netzentgelt Modul 3 | ct/kWh | – | state_class measurement; siehe 4.1 |
 | sensor | `wirtschaftlichkeit` | Wirtschaftlichkeit | – | – | device_class enum; siehe 4.2 |
 | number | je `NUMBER_PARAMS`-Schlüssel | Namen laut Const | laut Const | config | `mode=box`, Änderung → Hub |
-| text | `zeitfenster_q1` … `q4` | Zeitfenster Q1 … Q4 | – | config | `pattern=^[NSH]{24}$`, min=max=24 |
 | button | `neu_berechnen` | Neu berechnen | – | – | startet `hub.async_calculate()` als Hintergrund-Task |
 
 Empfehlung: nach Installation Entity-IDs über die Registry auf kurze Namen setzen
@@ -93,7 +102,7 @@ beschreiben und im E2E-Test **nicht** voraussetzen (Suche über `unique_id`).
   "stufe": "Hochtarif",
   "quartal": "Q4",
   "preise": {"nt": 4.41, "st": 11.06, "ht": 16.07},
-  "zeitplan": {"Q1": "NNNNNSSSSSSHHSSSSHHSSSSN", "Q2": "…", "Q3": "…", "Q4": "…"},
+  "zeitplan": [{"stufe": "Niedertarif", "von": "2026-01-01", "bis": "2026-12-31", "stunde_von": 23, "stunde_bis": 5}],
   "data": [
     {"start_time": "2026-10-10T00:00:00+02:00", "end_time": "2026-10-10T01:00:00+02:00",
      "stufe": "N", "price_per_kwh": 0.0441}
@@ -104,7 +113,7 @@ beschreiben und im E2E-Test **nicht** voraussetzen (Suche über `unique_id`).
 - `data`: heute 00:00 bis übermorgen 00:00 lokal (48, an Umstellungstagen 47/49 Slots).
 - `_unrecorded_attributes = frozenset({"data", "zeitplan"})`.
 - Aktualisierung: bei jeder Viertelstunde (`async_track_time_change`, Sekunde 2) und bei
-  Parameter-/Zeitfensteränderung.
+  Parameter-/Tarifzeitenänderung.
 
 ### 4.2 Attribute `sensor.wirtschaftlichkeit`
 
@@ -167,11 +176,11 @@ rows = await get_instance(hass).async_add_executor_job(
 Portierung von `reference/modul3_calc_prototype.py` (dort mit Brute-Force-Test verifiziert). Öffentliche API:
 
 ```python
-def stage(windows: dict[str,str], quarter: str, hour: int) -> str            # 'N'|'S'|'H'
-def import_price(scenario: str, p: Params, windows, quarter: str, hour: int, spot: float) -> float
+def stage(windows: Sequence[TariffWindow], day: date, hour: int) -> str            # 'N'|'S'|'H'
+def import_price(scenario: str, p: Params, windows, day: date, hour: int, spot: float) -> float
 def build_days(imp, exp, price, tz) -> dict[date, list[Hour]]                 # nur vollständige Tage
 def dp_day(cbuy, fi, imp, exp, cap_kwh, p: Params) -> float                   # ≤ 0 = Gewinn
-def evaluate(days, p: Params, windows, *, pause=None) -> Result
+def evaluate(days, p: Params, windows, *, ref_year: int, pause=None) -> Result   # day → project_day(day, ref_year)
 def slots(now_local: datetime, p: Params, windows) -> list[Slot]              # Netzentgelt-Verlauf
 ```
 
@@ -193,7 +202,15 @@ Regeln:
   `import_entity`, `export_entity`, `price_entity` mit Standardwerten aus `const`.
   Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
   (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).
-- OptionsFlow: dieselben drei Felder; Änderung → Entry neu laden.
+- OptionsFlow (`OptionsFlowWithReload`): Menü-Schritt `init` mit der aktuellen Tarifzeiten-Liste im Text
+  (`description_placeholders`) und den Einträgen `sources` (die drei Felder; Änderung → Entry neu laden),
+  `window_add`, `window_edit` (Auswahl → Formular), `window_delete` (Mehrfachauswahl). Formular: `stage`
+  (`SelectSelector` N/H), `start_date`, `end_date` (`DateSelector`), `from_hour` (0–23), `to_hour` (1–24)
+  (`NumberSelector`, Box, Schritt 1). Fehler (`WindowError`) → Fehlerschlüssel `window_<code>` am Feld
+  (`end_date`, `to_hour`, `from_hour`, bei `overlap` am `start_date` mit Platzhalter `{conflict}`).
+  Gespeichert wird über `hub.async_set_windows(...)` (Store, Signal, keine Neuberechnung); die Optionen des
+  Entries bleiben unverändert, es folgt kein Neuladen. Listenbeschriftung: `NT|HT · TT.MM.JJJJ–TT.MM.JJJJ · HH–HH Uhr`.
+- Beim Setup werden veraltete Entitäten `text.*zeitfenster_q1…q4` aus der Entity-Registry entfernt (AK-17).
 - Alle Texte in `translations/{de,en}.json`; Standard Deutsch.
 
 ## 9 Fehlerbehandlung und Logging
@@ -208,9 +225,9 @@ Regeln:
 
 - Attribut-Größenlimit des Recorders 16 KB → `_unrecorded_attributes` (siehe 4.1).
 - `statistics_during_period` ist eine **synchrone** Funktion und gehört in den Recorder-Executor.
-- Zeitumstellung: Tage mit 23/25 Stunden; Quartalszuordnung nach lokalem Datum.
+- Zeitumstellung: Tage mit 23/25 Stunden; Tarifzeiten-Zuordnung nach lokalem Datum; Auswertung über `project_day`.
 - Number-Entitäten mit `mode=box`; Float-Rundung auf Schrittweite im `native_value`.
-- Text-Entitäten validieren per `pattern`; zusätzlich im Hub (Fehler `ServiceValidationError`).
+- Tarifzeiten werden im Options-Flow und zusätzlich im Hub validiert (`calc.validate_windows`).
 
 ## 10 Packaging
 

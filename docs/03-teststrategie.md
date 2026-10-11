@@ -15,8 +15,9 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 - **Brute-Force-Äquivalenz (AK-4):** Property-Test mit hypothesis (≥ 1000 Fälle): Tages-DP == Vollenumeration
   für kleine Fälle (Vorlage: `reference/test_dp_bruteforce.py`, 30 Zufallsfälle bestanden).
 - **Preisformeln:** je Szenario S0–S4 und Quartal Beispielwerte von Hand gerechnet (Brutto/Netto, MwSt).
-- **Zeitfenster (AK-3):** Quartalsgrenzen, Sommer-/Winterzeitumstellung (23/25-Stunden-Tage), Fenster mit
-  nur N, nur H.
+- **Tarifzeiten (AK-3, AK-14, AK-15, AK-16):** Datumsgrenzen (inklusive), Sommer-/Winterzeitumstellung
+  (23/25-Stunden-Tage), Fenster über Mitternacht, ganztägig, nur N, nur H, Überschneidung/Fehlercodes,
+  `project_day` (29.02.), `windows_from_quarters` (Golden bleibt identisch).
 - **Invarianten:** Optimiert ≤ unoptimiert; mehr Speicher nie schlechter; Wirkungsgrad 100 % → Energieerhaltung;
   Einspeisung bei negativem Preis = 0 ct.
 - **Golden-Test (AK-5):** festes synthetisches Jahr (Seed fest) → JSON in `tests/unit/golden/`. Änderung
@@ -26,10 +27,11 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 
 ## 3 Integrationstests (HA-Testharness)
 - **Setup/Unload/Reload (AK-1):** Entitäten vorhanden, Gerät „Netzentgelt-Rechner“, `runtime_data` gesetzt.
-- **Eingaben (AK-2):** `number.set_value` außerhalb des Bereichs → Fehler; `text.set_value` mit Muster
-  `^[NSH]{24}$`; Änderung triggert Neuberechnung des Sensors `netzentgelt` ohne Recorder-Lauf.
+- **Eingaben (AK-2):** `number.set_value` außerhalb des Bereichs → Fehler; Änderung einer Zahl aktualisiert den Sensor
+  `netzentgelt` sofort ohne Recorder-Lauf. **Tarifzeiten (AK-13, AK-14, AK-17):** Optionsdialog hinzufügen/
+  bearbeiten/löschen, Fehler am Feld, Wirkung auf Sensor, Persistenz, Übernahme alter Quartals-Fenster.
 - **Sensor `netzentgelt` (AK-3):** Zeit einfrieren (`freezer`), pro Viertelstunde/Quartal richtiger Wert und
-  Attribute (`stufe`, `quartal`, `preise`, `zeitplan` je Quartal, `data`).
+  Attribute (`stufe`, `quartal`, `preise`, `zeitplan` (Tarifzeiten), `data`).
 - **Single-Flight (AK-6):** zwei gleichzeitige `button.press` → ein Lauf; Folgeauslöser ignoriert.
 - **Recorder-Zugriff:** Recorder-Instanz im Testharness, Statistiken per `async_import_statistics` einspielen;
   Berechnung liefert Ergebnis; fehlende Statistik → Status `fehler` mit Klartext (AK-8).
