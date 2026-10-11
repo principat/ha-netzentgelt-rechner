@@ -4,23 +4,35 @@ Stand: 10.10.2026 · Status: Entwurf zur Umsetzung · Sprache: Deutsch
 
 ## 1 Zweck
 
-Der Nutzer betreibt eine PV-Anlage mit Speichern in Dresden (SachsenNetze) und möchte entscheiden:
+Betreiber einer PV-Anlage mit Batteriespeicher in Deutschland wollen entscheiden:
 
 1. Lohnt §14a EnWG **Modul 3** (zeitvariable Netzentgelte, nur zusammen mit Modul 1)?
-2. Lohnt ein **dynamischer Stromtarif** (Börsenpreis, 15-Minuten-Day-Ahead)?
+2. Lohnt ein **dynamischer Stromtarif** (Börsenpreis, Day-Ahead)?
 3. Lohnt die **Kombination** aus beidem?
-4. Lohnt eine **Speichererweiterung** (+16 kWh, ca. 1500 €) – jeweils unter 1–3?
+4. Lohnt eine **Speichererweiterung** (zusätzliche nutzbare Kapazität zu frei wählbaren Kosten) – jeweils unter 1–3?
 
-Die Integration beantwortet das **aus den eigenen gemessenen Daten** des Nutzers und zeigt die Antwort
-dauerhaft im Dashboard. Annahmen sind im Dashboard editierbar. Zusätzlich liefert sie das
-**Netzentgelt Modul 3 als zeitlichen Verlauf** (ein Sensor, Attribute), z. B. für HAEO.
+Die Integration beantwortet das **aus den eigenen gemessenen Daten** des Nutzers (Langzeitstatistik von
+Netzbezug und Einspeisung) und zeigt die Antwort dauerhaft im Dashboard. Alle Tarif- und Anlagenwerte sind
+**Eingaben des Nutzers** und im Dashboard editierbar; die Integration enthält keine verbindlichen Tarifdaten
+eines bestimmten Netzbetreibers. Zusätzlich liefert sie das **Netzentgelt Modul 3 als zeitlichen Verlauf**
+(ein Sensor, Attribute), z. B. als Eingang für Energiemanagementsysteme.
 
 ## 2 Nutzer und Kontext
 
-Ein Privathaushalt (Home Assistant OS, Energie-Dashboard, HAEO-Optimierer). Anlage: ca. 23,8 kWp PV,
-Sungrow-Speicher (PV-geführt, ca. 20 kWh), Felicity-Speicher (ca. 15 kWh, AC-gekoppelt, frei
-verschiebbar), Elektroauto, Wärmepumpe/Warmwasser. Noch **kein** intelligentes Messsystem (iMSys);
-Antrag beim Messstellenbetreiber läuft. Details und Messwerte: `05-vorwissen-und-fakten.md`.
+Ein Privathaushalt mit Home Assistant (inkl. Energie-Dashboard bzw. Langzeitstatistiken) und
+- einer **PV-Anlage** (Einspeisung ins Netz, ggf. mit Einspeisevergütung),
+- mindestens einem **Batteriespeicher**; ein Teil davon, der aus dem Netz laden und ins Haus entladen darf,
+  gilt als „verschiebbar“ (§3),
+- einem **Netzbezugs- und einem Einspeisezähler**, deren Energiewerte als Langzeitstatistik vorliegen,
+- optional einem Sensor mit dem **Börsenpreis** (Day-Ahead, netto) für die Szenarien mit dynamischem Tarif.
+
+Weitere Verbraucher (E-Auto, Wärmepumpe usw.) sind nicht gesondert modelliert; sie gehen über das
+gemessene Verbrauchsprofil ein. Ein intelligentes Messsystem (iMSys) ist Voraussetzung für Modul 3 in der
+Praxis, wird aber von der Integration nicht geprüft.
+
+Die Standardwerte der Eingaben (§8) und die Zeitfenster (§7) sind **Beispielwerte** und müssen vom Nutzer
+anhand des Preisblatts des eigenen Netzbetreibers und des eigenen Tarifs angepasst werden. Messwerte und
+Hintergründe der Referenzanlage des Autors: `05-vorwissen-und-fakten.md`.
 
 ## 3 Begriffe
 
@@ -107,24 +119,27 @@ verschiebbare Speicher wird „oben drauf“ gerechnet); keine iMSys-/Steuerboxk
 
 | Schlüssel | Name | Einheit | Standard | Status |
 |---|---|---|---|---|
-| fixed | Arbeitspreis heute (brutto) | ct/kWh | 34,10 | verifiziert (Sensor `sensor.strompreis_aktueller_netzpreis` = 0,341) |
-| st | Netzentgelt Standardstufe | ct/kWh | 11,06 | Wert aus SachsenNetze-Blatt 2026; **Annahme**: gleich heutigem Netzentgelt |
-| nt | Netzentgelt Niedertarif | ct/kWh | 4,41 | SachsenNetze 2026 (brutto) |
-| ht | Netzentgelt Hochtarif | ct/kWh | 16,07 | SachsenNetze 2026 (brutto) |
+| fixed | Arbeitspreis heute (brutto) | ct/kWh | 34,10 | Beispiel; eigenen Tarif eintragen |
+| st | Netzentgelt Standardstufe | ct/kWh | 11,06 | Beispiel (Preisblatt des Netzbetreibers 2026); **Annahme**: gleich heutigem Netzentgelt |
+| nt | Netzentgelt Niedertarif | ct/kWh | 4,41 | Beispiel (Preisblatt des Netzbetreibers 2026, brutto) |
+| ht | Netzentgelt Hochtarif | ct/kWh | 16,07 | Beispiel (Preisblatt des Netzbetreibers 2026, brutto) |
 | levies | Umlagen und Steuern | ct/kWh | 8,8 | **Schätzung** (KA 2,84 + KWKG/§19/Offshore ≈ 3,5 + Stromsteuer 2,44, brutto) |
 | vat | Mehrwertsteuer | % | 19 | verifiziert |
 | markup | Aufschlag dynamischer Tarif | ct/kWh netto | 2,0 | **Annahme** |
 | dyn_base | Mehr-Grundgebühr dynamisch | €/Jahr | 40 | **Annahme** |
-| rebate | Modul-1-Pauschale | €/Jahr | 162,91 | SachsenNetze 2026 (brutto) |
+| rebate | Modul-1-Pauschale | €/Jahr | 162,91 | Beispiel (Preisblatt des Netzbetreibers 2026, brutto) |
 | m3_base_delta | Zusatz-Grundpreis Modul 3 | €/Jahr | 0 | **unbekannt** |
-| feedin | Einspeisevergütung | ct/kWh | 6,29 | Wert aus HAEO-Konfiguration des Nutzers, **zu prüfen** |
+| feedin | Einspeisevergütung | ct/kWh | 6,29 | Beispiel; tatsächlichen anzulegenden Wert bzw. Vergütung eintragen |
 | eta_rt | Wirkungsgrad Speicher | % | 88 | Annahme |
-| flex_kwh | verschiebbarer Speicher (nutzbar) | kWh | 13,5 | Felicity 15 kWh × 0,9 |
-| extra_kwh | Erweiterung (nutzbar) | kWh | 14,4 | 16 kWh × 0,9 |
+| flex_kwh | verschiebbarer Speicher (nutzbar) | kWh | 13,5 | Beispiel: 15 kWh × 0,9 nutzbar |
+| extra_kwh | Erweiterung (nutzbar) | kWh | 14,4 | Beispiel: 16 kWh × 0,9 nutzbar |
 | c_rate | Leistung | 1/h | 0,5 | Annahme |
 | wear | Verschleiß | ct/kWh | 0 | Annahme |
-| invest | Kosten Erweiterung | € | 1500 | Nutzerangabe |
+| invest | Kosten Erweiterung | € | 1500 | Beispiel; eigene Kosten eintragen |
 | zeitfenster Q1–Q4 | Stufenzuordnung je Stunde | Text, 24 Zeichen | siehe §7 | Annahme |
+
+Die Standardwerte stammen aus der Referenzanlage des Autors (Netzbetreiber SachsenNetze, Dresden, Stand 2026)
+und sind **Beispielwerte**. Wer einen anderen Netzbetreiber oder Tarif hat, trägt seine eigenen Werte ein.
 
 Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezähler, Börsenpreis-Sensor.
 
@@ -140,7 +155,7 @@ Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezä
 
 ## 10 Nicht-Ziele
 
-Keine Steuerung von Geräten (das macht HAEO); keine Prognose zukünftiger Preise; keine Berechnung
+Keine Steuerung von Geräten (das übernimmt ein Energiemanagementsystem); keine Prognose zukünftiger Preise; keine Berechnung
 von iMSys-/Steuerboxkosten; keine Abrechnung; keine Cloud-Zugriffe; keine Mehrsprachigkeit über
 Deutsch/Englisch hinaus; keine Mehrfachinstanz.
 
@@ -171,7 +186,7 @@ Deutsch/Englisch hinaus; keine Mehrfachinstanz.
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)
 
-- **F-1** Gelten die HT/NT-Fenster bei SachsenNetze ganzjährig gleich? (Standard: ja.)
+- **F-1** Gelten die HT/NT-Fenster beim eigenen Netzbetreiber ganzjährig gleich? (Standard: ja.)
 - **F-2** Variieren auch die Preise je Quartal? Wenn ja: Preise je Quartal als zusätzliche Eingaben
   (Datenmodell ist vorbereitet, siehe Tech-Spec §3.3).
 - **F-3** Entspricht die Standardstufe von Modul 3 dem heutigen Arbeitspreis des Netzentgelts?
