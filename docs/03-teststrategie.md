@@ -13,7 +13,7 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 
 ## 2 Unit-Tests (`calc/`)
 - **Brute-Force-Äquivalenz (AK-4):** Property-Test mit hypothesis (≥ 1000 Fälle): Tages-DP == Vollenumeration
-  für kleine Fälle (Vorlage: `reference/test_dp_bruteforce.py`, 30 Zufallsfälle bestanden).
+  für kleine Fälle (`tests/unit/test_dp_bruteforce.py`).
 - **Preisformeln:** je Szenario S0–S4 und Quartal Beispielwerte von Hand gerechnet (Brutto/Netto, MwSt).
 - **Tarifzeiten (AK-3, AK-14, AK-15, AK-16):** Datumsgrenzen (inklusive), Sommer-/Winterzeitumstellung
   (23/25-Stunden-Tage), Fenster über Mitternacht, ganztägig, nur N, nur H, Überschneidung/Fehlercodes,

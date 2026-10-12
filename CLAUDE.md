@@ -9,7 +9,6 @@ Lies zuerst, in dieser Reihenfolge:
 1. `docs/01-fachliche-spezifikation.md` (WAS und WARUM, Akzeptanzkriterien)
 2. `docs/02-technische-spezifikation.md` (WIE)
 3. `docs/03-teststrategie.md` und `docs/04-release-workflow.md`
-4. `reference/` – lauffähiger, gegen Brute-Force geprüfter Prototyp der Rechenlogik
 
 ## Arbeitsweise (verbindlich)
 - **Spec zuerst.** Jede Verhaltensänderung beginnt mit einer Änderung in `docs/01`/`02` und einem

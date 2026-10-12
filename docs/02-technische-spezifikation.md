@@ -44,7 +44,6 @@ custom_components/netzentgelt_rechner/
   number.py  button.py
   const.py  manifest.json  strings/translations (de.json, en.json)  icons.json
 tests/unit/ tests/integration/ tests/e2e/ fixtures/
-reference/           Prototyp (zum Portieren, nicht ausliefern)
 docs/  scripts/  .github/workflows/  hacs.json  pyproject.toml  CHANGELOG.md
 examples/{de,en}/dashboard.yaml
 ```
@@ -186,7 +185,7 @@ rows = await get_instance(hass).async_add_executor_job(
 
 ## 7 Rechenkern (`calc/`)
 
-Portierung von `reference/modul3_calc_prototype.py` (dort mit Brute-Force-Test verifiziert). Öffentliche API:
+Das Verfahren ist gegen eine Vollenumeration verifiziert (`tests/unit/test_dp_bruteforce.py`). Öffentliche API:
 
 ```python
 def stage(windows: Sequence[TariffWindow], day: date, hour: int) -> str            # 'N'|'S'|'H'
@@ -249,10 +248,3 @@ Regeln:
   "filename": "netzentgelt_rechner.zip"}`; `manifest.json` Version wird vom Release-Tool gesetzt.
 - Auslieferung ausschließlich `custom_components/netzentgelt_rechner/` (Zip-Wurzel = Inhalt dieses Ordners).
 - Installation: HACS (Custom Repository) oder manuell nach `/config/custom_components/`.
-
-## 11 Migration vom Zwischenstand
-
-Im Ziel-HA existieren aus der Vorarbeit **temporär**: Helfer `input_number.m3_*`, `input_text.m3_info`
-und im Dashboard `dashboard-strompreis` die Ansicht „Lohnt es sich?“ (liest diese Helfer). Nach
-Inbetriebnahme: Ansicht auf die neuen Sensoren umstellen (`examples/de/dashboard.yaml`, `examples/en/dashboard.yaml`), Helfer
-löschen.

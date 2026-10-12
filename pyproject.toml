@@ -18,7 +18,6 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["reference"]
 target-version = "py313"
 
 [tool.ruff.lint]
