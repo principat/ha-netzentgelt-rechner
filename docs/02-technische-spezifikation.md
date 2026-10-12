@@ -202,6 +202,13 @@ Regeln:
   `k ∈ [-kd, kc]`; Kosten je Stunde und Aktion vorab tabellieren; Laden: `bus = k·q/η`,
   `ab = min(exp, bus)`, Kosten `(bus-ab)·cbuy + ab·fi + wear·k·q`; Entladen: `d = |k|·q·η`,
   `use = min(d, imp)`, Kosten `−use·cbuy − (d−use)·fi + wear·|k|·q`. Rückgabe `V[0][0]`.
+- **Netzanschluss (AK-19):** `Params.grid_import_kw`/`grid_export_kw` (0 = unbegrenzt). Eine Aktion ist je Stunde nur
+  zulässig, wenn beim Laden `bus − ab ≤ max(0, grid_import_kw·1 h − imp)` und beim Entladen
+  `d − use ≤ max(0, grid_export_kw·1 h − exp)` gilt; unzulässige Aktionen erhalten Kosten `inf`, `k = 0` ist immer
+  zulässig (das gemessene Profil wird nicht verändert, auch wenn es die Grenze schon überschreitet). Ohne
+  Begrenzung (Wert 0) entsteht keine `inf`-Zelle, das Ergebnis ist bit-identisch zu vorher. Wegen des Füllstandsrasters
+  (1 kWh) werden Teilschritte unterhalb des Rasters nicht gerechnet: bleibt weniger Spielraum als ein Schritt, wird
+  in dieser Stunde nicht geladen/entladen (konservativ).
 - `η = √eta_rt`; `kc = max(1, int(c_rate·cap·η/q))`, `kd = max(1, int(c_rate·cap/(η·q)))`.
 - `fi = feedin` falls `spot ≥ 0`, sonst 0.
 - Tage mit `Σimp ≤ 0.5` überspringen. Skalierung `365/Anzahl_Tage`.

@@ -21,6 +21,8 @@ UI_DEFAULTS: dict[str, float] = {
     "flex_kwh": 13.5,
     "extra_kwh": 14.4,
     "c_rate": 0.5,
+    "grid_import_kw": 0.0,
+    "grid_export_kw": 0.0,
     "wear": 0.0,
     "invest": 1500.0,
 }

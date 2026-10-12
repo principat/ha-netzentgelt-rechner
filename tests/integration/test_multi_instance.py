@@ -19,6 +19,7 @@ from custom_components.netzentgelt_rechner.const import (
     CONF_IMPORT,
     CONF_PRICE,
     DOMAIN,
+    NUMBER_PARAMS,
 )
 from custom_components.netzentgelt_rechner.hub import Hub
 
@@ -54,7 +55,7 @@ async def test_instances_have_own_devices_and_entities(hass, entry, entry_b):  #
     registry = er.async_get(hass)
     for config, name in ((entry, "Netzentgelt-Rechner"), (entry_b, "Standort B")):
         items = er.async_entries_for_config_entry(registry, config.entry_id)
-        assert len(items) == 2 + 17 + 1
+        assert len(items) == 2 + len(NUMBER_PARAMS) + 1
         devices = dr.async_entries_for_config_entry(dr.async_get(hass), config.entry_id)
         assert [d.name for d in devices] == [name]
         assert {e.device_id for e in items} == {devices[0].id}

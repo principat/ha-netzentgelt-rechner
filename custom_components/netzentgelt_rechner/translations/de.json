@@ -154,6 +154,12 @@
       "c_rate": {
         "name": "Speicherleistung (C-Rate)"
       },
+      "grid_import_kw": {
+        "name": "Netzanschluss: maximale Bezugsleistung (0 = unbegrenzt)"
+      },
+      "grid_export_kw": {
+        "name": "Netzanschluss: maximale Einspeiseleistung (0 = unbegrenzt)"
+      },
       "wear": {
         "name": "Verschleißkosten Speicher"
       },

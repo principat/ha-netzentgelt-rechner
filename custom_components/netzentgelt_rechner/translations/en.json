@@ -154,6 +154,12 @@
       "c_rate": {
         "name": "Storage power (C-rate)"
       },
+      "grid_import_kw": {
+        "name": "Grid connection: maximum import power (0 = unlimited)"
+      },
+      "grid_export_kw": {
+        "name": "Grid connection: maximum export power (0 = unlimited)"
+      },
       "wear": {
         "name": "Storage wear cost"
       },

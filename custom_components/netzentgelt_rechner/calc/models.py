@@ -32,6 +32,8 @@ class Params:
     c_rate: float
     wear: float  # EUR/kWh throughput
     invest: float  # EUR
+    grid_import_kw: float = 0.0  # connection limit, 0 = unlimited
+    grid_export_kw: float = 0.0  # connection limit, 0 = unlimited
     step: float = 1.0  # fill level grid in kWh
 
     @classmethod

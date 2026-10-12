@@ -139,6 +139,45 @@ def test_dp_wear_makes_trading_unprofitable(params):
     assert dp_day([0.05, 0.4], [0.0, 0.0], [0.0, 3.0], [0.0, 0.0], 2.0, p) == 0.0
 
 
+def test_grid_import_limit_blocks_cheap_night_charging(params):  # AK-19
+    cb, fi = [0.05, 0.40], [0.0, 0.0]
+    imp, exp = [0.0, 3.0], [0.0, 0.0]
+    p = replace(params, c_rate=1.0, eta_rt=1.0)
+    free = dp_day(cb, fi, imp, exp, 3.0, p)
+    assert free == pytest.approx(-3.0 * 0.40 + 3.0 * 0.05)  # charge 3 kWh at night, use at noon
+    # connection allows 1 kW import: only one 1 kWh step can be charged in that hour
+    limited = dp_day(cb, fi, imp, exp, 3.0, replace(p, grid_import_kw=1.0))
+    assert limited == pytest.approx(-1.0 * 0.40 + 1.0 * 0.05)
+    assert limited > free
+    # the household's own draw eats the headroom; below one step nothing can be charged
+    busy = [0.8, 3.0]
+    assert dp_day(cb, fi, busy, exp, 3.0, replace(p, grid_import_kw=1.0)) == 0.0
+    assert dp_day(cb, fi, busy, exp, 3.0, p) < 0
+
+
+def test_grid_export_limit_blocks_discharging_into_the_grid(params):  # AK-19
+    cb, fi = [0.05, 0.40], [0.0629, 0.0629]
+    exp = [0.0, 0.0]
+    p = replace(params, c_rate=1.0, eta_rt=1.0)
+    imp_use = [0.0, 1.0]
+    free = dp_day(cb, fi, imp_use, exp, 3.0, p)
+    assert free < 0  # 1 kWh replaces import at 0.40, the rest earns the feed-in price
+    capped = dp_day(cb, fi, imp_use, exp, 3.0, replace(p, grid_export_kw=0.5))
+    # export limited to 0.5 kW: one 1 kWh step discharged (1 kWh replaces import) at most
+    assert capped == pytest.approx(-0.40 + 0.05)
+    assert capped > free
+
+
+def test_zero_limits_mean_unlimited(params):  # AK-19
+    cb, fi = [0.05, 0.4, 0.1], [0.0629] * 3
+    imp, exp = [0.5, 3.0, 1.0], [0.0, 0.0, 2.0]
+    base = dp_day(cb, fi, imp, exp, 3.0, params)
+    assert (
+        dp_day(cb, fi, imp, exp, 3.0, replace(params, grid_import_kw=0.0, grid_export_kw=0.0))
+        == base
+    )
+
+
 # --- evaluate --------------------------------------------------------------------------
 
 
@@ -212,3 +251,19 @@ def test_result_to_dict_rounds(params, windows):  # docs/02 §4.2
     for s in ("modul3", "dynamisch", "kombination"):
         for value in out["szenarien"][s].values():
             assert value is None or round(value, 2) == value
+
+
+def test_evaluate_with_grid_limit_never_saves_more(params, windows):  # AK-19
+    day = [Hour(h, 1.5, 0.0, 0.02 if h < 6 else 0.30) for h in range(24)]
+    free = evaluate(_year(day), params, windows, ref_year=2026, min_days=5)
+    limited = evaluate(
+        _year(day),
+        replace(params, grid_import_kw=2.0),  # households draws 1.5 kW: too little room to charge
+        windows,
+        ref_year=2026,
+        min_days=5,
+    )
+    for name, s in free.szenarien.items():
+        assert limited.szenarien[name].speicher <= s.speicher + 1e-9
+        assert limited.szenarien[name].passiv == pytest.approx(s.passiv)  # baseline unchanged
+    assert limited.szenarien["dynamisch"].speicher < free.szenarien["dynamisch"].speicher

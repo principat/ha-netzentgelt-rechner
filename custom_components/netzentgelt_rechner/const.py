@@ -31,6 +31,22 @@ NUMBER_PARAMS: dict[str, tuple[str, str, float, float, float, float]] = {
     "flex_kwh": ("Nutzbare Speicherkapazität (vorhanden)", "kWh", 0, 200, 0.1, 13.5),
     "extra_kwh": ("Nutzbare Kapazität der Speichererweiterung", "kWh", 0, 200, 0.1, 14.4),
     "c_rate": ("Speicherleistung (C-Rate)", "1/h", 0.1, 3, 0.05, 0.5),
+    "grid_import_kw": (
+        "Netzanschluss: maximale Bezugsleistung (0 = unbegrenzt)",
+        "kW",
+        0,
+        1000,
+        0.1,
+        0.0,
+    ),
+    "grid_export_kw": (
+        "Netzanschluss: maximale Einspeiseleistung (0 = unbegrenzt)",
+        "kW",
+        0,
+        1000,
+        0.1,
+        0.0,
+    ),
     "wear": ("Verschleißkosten Speicher", "ct/kWh", 0, 20, 0.01, 0.0),
     "invest": ("Kosten der Speichererweiterung", "€", 0, 100000, 10, 1500.0),
 }

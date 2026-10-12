@@ -32,10 +32,16 @@ def brute(cb, fi, imp, exp, cap, p: Params) -> float:
             if k > 0:
                 bus = k * q / eta
                 ab = min(exp[h], bus)
+                if p.grid_import_kw and bus - ab > max(0.0, p.grid_import_kw - imp[h]) + 1e-12:
+                    ok = False
+                    break
                 c += (bus - ab) * cb[h] + ab * fi[h] + p.wear * k * q
             elif k < 0:
                 d = -k * q * eta
                 use = min(d, imp[h])
+                if p.grid_export_kw and d - use > max(0.0, p.grid_export_kw - exp[h]) + 1e-12:
+                    ok = False
+                    break
                 c += -use * cb[h] - (d - use) * fi[h] + p.wear * (-k) * q
         if ok and c < best:
             best = c
@@ -64,3 +70,27 @@ feed = st.lists(st.sampled_from([0.0, 0.0629]), min_size=HOURS, max_size=HOURS)
 def test_dp_equals_bruteforce(params, cb, fi, imp, exp, cap, wear):  # AK-4
     p = replace(params, c_rate=1.0, wear=wear)
     assert abs(dp_day(cb, fi, imp, exp, cap, p) - brute(cb, fi, imp, exp, cap, p)) < 1e-9
+
+
+@settings(
+    max_examples=1000,
+    deadline=None,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
+@given(
+    cb=prices,
+    fi=feed,
+    imp=energy,
+    exp=energy,
+    cap=st.sampled_from([2.0, 3.0]),
+    grid_import=st.sampled_from([0.0, 0.5, 1.0, 2.5]),
+    grid_export=st.sampled_from([0.0, 0.5, 1.0, 2.5]),
+)
+def test_dp_with_grid_limits_equals_bruteforce(  # AK-4, AK-19
+    params, cb, fi, imp, exp, cap, grid_import, grid_export
+):
+    p = replace(params, c_rate=1.0, grid_import_kw=grid_import, grid_export_kw=grid_export)
+    assert abs(dp_day(cb, fi, imp, exp, cap, p) - brute(cb, fi, imp, exp, cap, p)) < 1e-9
+    # a limit never helps (AK-19)
+    free = replace(p, grid_import_kw=0.0, grid_export_kw=0.0)
+    assert dp_day(cb, fi, imp, exp, cap, p) >= dp_day(cb, fi, imp, exp, cap, free) - 1e-9

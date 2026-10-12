@@ -13,6 +13,7 @@ from .models import CalcError, Hour, Params, Result, ScenarioResult
 SCENARIOS = ("modul3", "dynamisch", "kombination")
 MIN_DAYS = 200
 _MIN_IMPORT_KWH = 0.5
+_EPS = 1e-12  # tolerance for the connection limits
 
 
 def _scenario_price(scenario: str, p: Params, netz: float, spot: float) -> float:
@@ -92,13 +93,22 @@ def dp_day(
     costs: list[dict[int, float]] = []
     for h in range(hours):
         row: dict[int, float] = {0: 0.0}
+        # grid connection (AK-19): headroom per hour in kWh, none if unlimited; k = 0 stays allowed
+        import_room = max(0.0, p.grid_import_kw - imp[h]) if p.grid_import_kw else math.inf
+        export_room = max(0.0, p.grid_export_kw - exp[h]) if p.grid_export_kw else math.inf
         for k in range(1, kc + 1):
             bus = k * q / eta
             ab = min(exp[h], bus)
+            if bus - ab > import_room + _EPS:
+                row[k] = math.inf
+                continue
             row[k] = (bus - ab) * cbuy[h] + ab * fi[h] + p.wear * k * q
         for k in range(1, kd + 1):
             d = k * q * eta
             use = min(d, imp[h])
+            if d - use > export_room + _EPS:
+                row[-k] = math.inf
+                continue
             row[-k] = -use * cbuy[h] - (d - use) * fi[h] + p.wear * k * q
         costs.append(row)
     value = [0.0] * (n + 1)
