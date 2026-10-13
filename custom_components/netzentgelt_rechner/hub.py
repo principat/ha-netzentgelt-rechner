@@ -23,9 +23,6 @@ from .const import (
     CONF_EXPORT,
     CONF_IMPORT,
     CONF_PRICE,
-    DEFAULT_EXPORT,
-    DEFAULT_IMPORT,
-    DEFAULT_PRICE,
     DEFAULT_WINDOW,
     DOMAIN,
     NUMBER_PARAMS,
@@ -73,9 +70,9 @@ class Hub:
     def sources(self) -> tuple[str, str, str]:
         conf = {**self.entry.data, **self.entry.options}
         return (
-            conf.get(CONF_IMPORT, DEFAULT_IMPORT),
-            conf.get(CONF_EXPORT, DEFAULT_EXPORT),
-            conf.get(CONF_PRICE, DEFAULT_PRICE),
+            conf.get(CONF_IMPORT, ""),
+            conf.get(CONF_EXPORT, ""),
+            conf.get(CONF_PRICE, ""),
         )
 
     @property

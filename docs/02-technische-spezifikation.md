@@ -219,7 +219,7 @@ Regeln:
 
 - Mehrfach einrichtbar (kein `single_config_entry`, AK-20), Schritt `user`: Pflichtfeld `name` (Titel des Entries,
   Standard „Netzentgelt-Rechner“, bei Belegung mit Zähler „… 2“; doppelter Name → Fehler `name_exists` am Feld), dazu drei `EntitySelector(domain="sensor")` für
-  `import_entity`, `export_entity`, `price_entity` mit Standardwerten aus `const`.
+  `import_entity`, `export_entity`, `price_entity` **ohne** Vorbelegung (beim Ändern im Optionsdialog der aktuelle Wert).
   Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
   (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).
 - OptionsFlow (`OptionsFlowWithReload`): Menü-Schritt `init` mit der aktuellen Tarifzeiten-Liste im Text
@@ -232,9 +232,12 @@ Regeln:
   Entries bleiben unverändert, es folgt kein Neuladen. Listenbeschriftung: `NT|HT · TT.MM.JJJJ–TT.MM.JJJJ · HH–HH Uhr`.
 - **`inputs` (AK-18):** Formular mit `section`-Gruppen `hilfe` (**eingeklappt**, `{"collapsed": True}`), `netzentgelt`, `tarife`,
   `speicher`, `anschluss`; die Felder sind `NumberSelector` (Min/Max/Schritt/Einheit aus `NUMBER_PARAMS`, Box) mit
-  aktuellem Wert als Vorgabe. Die Gruppe `hilfe` enthält je Thema ein reines Anzeigefeld (`TemplateSelector`,
-  optional, nie gespeichert), dessen `data_description` Markdown mit Wozu/Was/Woher je Feld trägt
-  (`**<Feldname>** – …`); Übersetzungsschlüssel `options.step.inputs.sections.<gruppe>.data[_description].<feld>`.
+  aktuellem Wert als Vorgabe. Die Gruppe `hilfe` enthält ein einziges reines Anzeigefeld `help` (`BooleanSelector`, optional,
+  nie gespeichert), dessen `data_description` den Markdown-Hilfetext trägt: je Thema eine Überschrift (`### …`) und je Feld
+  `**<Feldname>** – Wozu: … Eintragen: … Woher: …`; Schlüssel `options.step.inputs.sections.hilfe.data_description.help`
+  (Felder: `….sections.<gruppe>.data.<feld>`). Geprüft im echten Frontend (Screenshots, `tests/e2e/test_ui.py`): ein
+  `TemplateSelector` zeigt je Feld eine Editor-Box, ein `ConstantSelector` zeigt keinen Helper-Text, und
+  Abschnitts-Beschreibungen verlieren Zeilenumbrüche – nur der `BooleanSelector` zeigt Label und Markdown sauber.
   Speichern über `hub.async_set_params(values)`: prüft alle Bereiche, setzt alle Werte atomar, speichert verzögert,
   feuert das Signal, **keine** Neuberechnung (wie `async_set_param`); danach zurück ins Menü.
 - Beim Setup werden veraltete Entitäten `text.*zeitfenster_q1…q4` aus der Entity-Registry entfernt (AK-17).

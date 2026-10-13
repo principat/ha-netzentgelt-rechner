@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+try:
+    import probatio as vol  # HA >= 2026.10
+except ImportError:  # older Home Assistant
+    import voluptuous as vol  # type: ignore[no-redef]
 from helpers import EXPORT_ID, IMPORT_ID, PRICE_ID
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME
@@ -119,3 +123,12 @@ async def test_options_flow_changes_sources(hass: HomeAssistant, entry):  # AK-1
     assert done["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.runtime_data.sources[2] == "sensor.other_price"
+
+
+async def test_sources_are_not_prefilled(hass: HomeAssistant):  # AK-11
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    for key in result["data_schema"].schema:
+        if key.schema in (CONF_IMPORT, CONF_EXPORT, CONF_PRICE):
+            assert key.default is vol.UNDEFINED, key.schema  # no plant-specific defaults

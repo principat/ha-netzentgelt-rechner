@@ -8,9 +8,6 @@ CONF_IMPORT = "import_entity"
 CONF_EXPORT = "export_entity"
 CONF_PRICE = "price_entity"
 
-DEFAULT_IMPORT = "sensor.watt_wachter_zahlerstand_bezug"
-DEFAULT_EXPORT = "sensor.watt_wachter_zahlerstand_einspeisung"
-DEFAULT_PRICE = "sensor.epex_preis_verlauf"
 
 SIGNAL_UPDATE = f"{DOMAIN}_update"
 

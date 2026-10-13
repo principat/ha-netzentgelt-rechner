@@ -36,7 +36,7 @@ async def test_form_has_collapsed_help_first_and_all_groups(hass: HomeAssistant,
     assert list(sections) == ["hilfe", *GROUPS]  # help comes first
     assert sections["hilfe"].options == {"collapsed": True}
     assert all(sections[g].options == {"collapsed": False} for g in GROUPS)
-    assert set(_fields(sections["hilfe"])) == {f"help_{g}" for g in GROUPS}
+    assert _fields(sections["hilfe"]) == ["help"]  # display-only carrier of the help Markdown
     covered = {key for g in GROUPS for key in _fields(sections[g])}
     assert covered == set(NUMBER_PARAMS)  # every number input is reachable in the dialog
     nt = next(k for k in sections["netzentgelt"].schema.schema if k.schema == "nt")
@@ -54,7 +54,7 @@ async def test_saving_changes_values_without_recalculation(hass: HomeAssistant, 
     values = {g: {k: NUMBER_PARAMS[k][5] for k in keys} for g, keys in GROUPS.items()}
     values["netzentgelt"]["nt"] = 5.5
     values["anschluss"]["grid_import_kw"] = 24.0
-    values["hilfe"] = {"help_netzentgelt": "ignored display field"}
+    values["hilfe"] = {"help": True}  # display-only, must be ignored
     done = await hass.config_entries.options.async_configure(form["flow_id"], values)
     assert done["type"] is FlowResultType.MENU  # back to the menu
     await hass.async_block_till_done()

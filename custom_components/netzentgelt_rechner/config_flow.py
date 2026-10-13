@@ -20,6 +20,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     DateSelector,
     EntitySelector,
     EntitySelectorConfig,
@@ -30,7 +31,6 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
-    TemplateSelector,
 )
 from homeassistant.util import dt as dt_util
 
@@ -39,9 +39,6 @@ from .const import (
     CONF_EXPORT,
     CONF_IMPORT,
     CONF_PRICE,
-    DEFAULT_EXPORT,
-    DEFAULT_IMPORT,
-    DEFAULT_PRICE,
     DOMAIN,
     NUMBER_PARAMS,
 )
@@ -64,11 +61,7 @@ _INPUT_GROUPS = {
     "anschluss": ("grid_import_kw", "grid_export_kw"),
 }
 
-_FIELDS = (
-    (CONF_IMPORT, DEFAULT_IMPORT),
-    (CONF_EXPORT, DEFAULT_EXPORT),
-    (CONF_PRICE, DEFAULT_PRICE),
-)
+_FIELDS = (CONF_IMPORT, CONF_EXPORT, CONF_PRICE)
 
 
 DEFAULT_NAME = "Netzentgelt-Rechner"
@@ -80,8 +73,9 @@ def _schema(defaults: dict[str, Any], *, name: str | None = None) -> vol.Schema:
     fields: dict[Any, Any] = {}
     if name is not None:
         fields[vol.Required(CONF_NAME, default=name)] = str
-    for key, default in _FIELDS:
-        fields[vol.Required(key, default=defaults.get(key, default))] = selector
+    for key in _FIELDS:
+        marker = vol.Required(key, default=defaults[key]) if key in defaults else vol.Required(key)
+        fields[marker] = selector
     return vol.Schema(fields)
 
 
@@ -89,7 +83,7 @@ async def _validate(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str
     """Return field errors; an entity is valid if it has a state or statistics metadata."""
     known = {item["statistic_id"] for item in await async_list_statistic_ids(hass)}
     errors: dict[str, str] = {}
-    for key, _ in _FIELDS:
+    for key in _FIELDS:
         entity_id = user_input[key]
         if hass.states.get(entity_id) is None and entity_id not in known:
             errors[key] = "entity_not_found"
@@ -181,11 +175,8 @@ def _inputs_schema(params: dict[str, float]) -> vol.Schema:
             )
         )
 
-    # display-only fields: their translated data_description is the help Markdown
-    help_block = section(
-        vol.Schema({vol.Optional(f"help_{g}"): TemplateSelector() for g in _INPUT_GROUPS}),
-        {"collapsed": True},
-    )
+    # display-only field: its translated data_description is the help Markdown
+    help_block = section(vol.Schema({vol.Optional("help"): BooleanSelector()}), {"collapsed": True})
     fields: dict[Any, Any] = {vol.Optional("hilfe"): help_block}
     for group, keys in _INPUT_GROUPS.items():
         fields[vol.Required(group)] = section(

@@ -41,7 +41,7 @@ anhand des Preisblatts des eigenen Netzbetreibers und des eigenen Tarifs angepas
 | NT / ST / HT | Niedertarif / Standardstufe / Hochtarif (Arbeitspreis des Netzentgelts, ct/kWh) |
 | Tarifzeit | Eintrag der Liste in §7: Stufe (HT oder NT), Start- und Enddatum, Start- und Endstunde. Alle Zeiten ohne Eintrag sind Standardstufe |
 | Dynamischer Tarif | Energiepreis = Börsenpreis (Day-Ahead) + Aufschlag; Netzentgelt, Umlagen, Steuern kommen dazu |
-| Börsenpreis (Spot) | Netto, €/kWh, Quelle `sensor.epex_preis_verlauf` (Langzeitstatistik, stündlich gemittelt) |
+| Börsenpreis (Spot) | Netto, €/kWh, ein Sensor des Nutzers mit Langzeitstatistik (stündlich gemittelt) |
 | Nutzbare Speicherkapazität | Kapazität des Speichers in kWh, die tatsächlich nutzbar ist, also ohne Reserven und Herstellergrenzen (z. B. 15 kWh Brutto × 0,9) |
 | Passiv | Nur der Tarif ändert sich; das Verbrauchsprofil bleibt wie im Basiszeitraum |
 | Optimiert | Zusätzlich fährt der Speicher mit seiner nutzbaren Kapazität täglich preisoptimal |
@@ -251,7 +251,8 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
 - **AK-9** Automatische Neuberechnung am 1. jedes Monats um 03:30 Uhr und – falls noch keine
   Ergebnisse vorliegen – 5 Minuten nach HA-Start.
 - **AK-10** Ergebnisse überstehen HA-Neustart (persistiert), Zustand bleibt `fertig`.
-- **AK-11** Konfigurierbare Quellsensoren; Auswahl nicht vorhandener Entitäten wird abgelehnt.
+- **AK-11** Konfigurierbare Quellsensoren; Auswahl nicht vorhandener Entitäten wird abgelehnt. Die Quellsensoren sind
+  im Einrichtungsdialog **nicht vorbelegt** (keine anlagenspezifischen Standardwerte).
 - **AK-13** Tarifzeiten lassen sich im Optionsdialog hinzufügen, bearbeiten und löschen. Die Änderung wirkt
   sofort auf den Netzentgelt-Sensor, löst **keine** Neuberechnung aus und übersteht einen HA-Neustart.
 - **AK-14** Ungültige Tarifzeiten (Enddatum vor Startdatum, Start- gleich Endstunde, Stunden außerhalb des

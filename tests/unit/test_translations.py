@@ -78,9 +78,7 @@ def test_every_number_input_has_a_label_and_help(name):  # AK-18
         if f"{prefix}{sec}.data.{key}" in texts
     }
     assert labelled.keys() == NUMBER_PARAMS.keys()  # each field is in exactly one section
-    help_text = "\n".join(
-        v for k, v in texts.items() if k.startswith(prefix + "hilfe.data_description.")
-    )
+    help_text = texts[prefix + "hilfe.data_description.help"]
     for key, label in labelled.items():
         line = next((x for x in help_text.splitlines() if x.startswith(f"**{label}** \u2013 ")), "")
         assert len(line.split(": ")) >= 4, (name, key)  # why / enter / source all present
