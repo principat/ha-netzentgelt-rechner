@@ -21,6 +21,7 @@ homeassistant:
   time_zone: Europe/Berlin
   unit_system: metric
   country: DE
+  language: de
   currency: EUR
 http:
 logger:

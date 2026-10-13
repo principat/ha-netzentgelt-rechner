@@ -14,6 +14,7 @@ dev = [
   "mypy",
   "websockets",
   "aiohttp",
+  "playwright",
 ]
 
 [tool.ruff]

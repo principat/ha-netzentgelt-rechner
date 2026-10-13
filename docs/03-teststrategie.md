@@ -59,6 +59,24 @@ Aufbau (`scripts/e2e.sh`):
 3. Integration per REST `config_entries/flow` einrichten.
 4. Tests per pytest + `aiohttp`/`websockets` gegen die laufende Instanz.
 
+### 4.1 Visuelle Tests im echten Frontend (`scripts/e2e-ui.sh`, `tests/e2e/test_ui.py`)
+Was Nutzer in den Dialogen sehen, lässt sich mit Mocks nicht prüfen (Beispiel: ein `TemplateSelector` als Träger des
+Hilfetexts zeigte je Thema eine Editor-Box). Deshalb läuft dieselbe HA-Instanz zusätzlich mit **Playwright (Chromium,
+headless)**:
+- Anmeldung ohne Login-Seite: das langlebige Token wird als `hassTokens` in den `localStorage` des Browsers gesetzt.
+- Getestet wird in **Deutsch und Englisch**; erwartete Texte kommen aus den Übersetzungsdateien (so wird zugleich geprüft,
+  dass sie wirklich im Frontend ankommen). Prüfpunkte: Optionsmenü mit Tarifzeiten-Liste, Hilfeblock **eingeklappt** und
+  nach dem Aufklappen **lesbar** (kein `{{`, kein `**`, kein `ha-code-editor`, jedes Zahlenfeld mit fetter Beschriftung),
+  Speichern der Eingaben ohne Neuberechnung, Überschneidungs-Fehler am Feld, Einrichtungsdialog (Instanzname vorgeschlagen,
+  **keine** anlagenspezifischen Vorbelegungen), Geräteseite.
+- Jeder Test legt **Screenshots** in `tests/e2e/screenshots/` ab (nicht eingecheckt; in der CI als Artefakt `ui-screenshots`).
+  Für die README ausgewählte Bilder liegen in `docs/screenshots/`.
+- Laufzeit ca. 1 Minute; eigener CI-Job `ui` (kein Release-Gate), damit die Gesamtlaufzeit überschaubar bleibt.
+- **Regel:** Jede Änderung an Dialogen, Übersetzungen oder Formularfeldern wird mit diesem Lauf **angesehen** (Screenshots
+  prüfen), nicht nur auf Testerfolg verlassen.
+- Möglicher Ausbau: ein MQTT-Broker-Container und MQTT-Sensoren, die dynamische Zähler- und Preiswerte live einspeisen
+  (die Langzeitstatistik bleibt per `recorder/import_statistics`, weil der Recorder 12 Monate Vorlauf braucht).
+
 Szenarien:
 - **E2E-1 Happy Path (AK-1, AK-5, AK-10):** einrichten → Berechnung → Ergebnisse == Golden → HA neu starten
   → Ergebnisse noch da.

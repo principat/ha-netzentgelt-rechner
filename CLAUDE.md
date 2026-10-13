@@ -17,7 +17,7 @@ Lies zuerst, in dieser Reihenfolge:
 - **Kleine Schritte, grüne Pipeline.** Trunk-basiert: kurzlebige Branches `feat/…`, `fix/…`, PR nach
   `main`, Squash-Merge, Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`).
 - **Definition of Done** je PR: ruff + mypy grün, Unit- und Integrationstests grün, Abdeckung der
-  Rechenlogik `calc/` ≥ 95 % Zweige, hassfest und HACS-Validierung grün, Specs und Anwenderdoku (DE+EN) aktualisiert, keine neuen Warnungen im HA-Log im E2E-Lauf.
+  Rechenlogik `calc/` ≥ 95 % Zweige, hassfest und HACS-Validierung grün, Specs und Anwenderdoku (DE+EN) aktualisiert, keine neuen Warnungen im HA-Log im E2E-Lauf; bei Änderungen an Dialogen/Texten **Screenshots des UI-Laufs angesehen** (`scripts/e2e-ui.sh`).
 - Sprache: Entwicklerdoku (`docs/`, Entwicklerteil der README) und Entitätsnamen **Deutsch**, UI-Übersetzungen `de` + `en`;
   **Anwenderdoku (README, `examples/`) immer zweisprachig**: README englisch zuerst, Abschnitt „Deutsch“ am Ende,
   Beispiele in `examples/de/` und `examples/en/`;
@@ -54,6 +54,8 @@ Lies zuerst, in dieser Reihenfolge:
 - `uv run pytest tests/unit tests/integration` – schnelle Tests
 - `uv run ruff check . && uv run ruff format --check . && uv run mypy custom_components`
 - `scripts/e2e.sh` – startet HA im Container, spielt Fixtures ein, führt `tests/e2e` aus
+- `scripts/e2e-ui.sh` – dasselbe plus Playwright im echten Frontend, Screenshots in `tests/e2e/screenshots/`
+  (einmalig: `uv run python -m playwright install --with-deps chromium`)
 - `scripts/dev-ha.sh` – lokales HA mit eingehängter Integration für Handtests
 
 ## Umgang mit Unsicherheit

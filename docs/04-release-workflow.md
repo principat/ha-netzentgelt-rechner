@@ -29,7 +29,8 @@
 | test | pytest Unit + Integration, Coverage-Gate (calc ≥ 95 % Zweige) |
 | hassfest | `home-assistant/actions/hassfest` |
 | hacs | `hacs/action` (category: integration) |
-| e2e | Matrix HA 2026.2.x / 2026.10.x, `scripts/e2e.sh` |
+| e2e | Matrix HA 2026.2.x / 2026.10.x, `scripts/e2e.sh` (HA-Log als Artefakt) |
+| ui | Visuelle Tests im echten Frontend (Playwright), `scripts/e2e-ui.sh`, Screenshots als Artefakt `ui-screenshots`; kein Release-Gate |
 
 ## 5 Definition of Release
 - Alle Gates grün auf dem Release-Commit.
