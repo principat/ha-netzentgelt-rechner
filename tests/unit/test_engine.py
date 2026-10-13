@@ -123,13 +123,13 @@ def test_dp_is_never_a_loss_and_monotone_in_capacity(params):  # invariants
 
 def test_dp_perfect_efficiency_conserves_energy(params):  # invariants
     # eta 100 %: charge 1 kWh at 0.1, discharge into import at 0.3 -> gain exactly 0.2/kWh
-    p = replace(params, eta_rt=1.0, c_rate=1.0)
+    p = replace(params, eta_rt=1.0, power_kw=2.0)
     cost = dp_day([0.1, 0.3], [0.0, 0.0], [0.0, 5.0], [0.0, 0.0], 2.0, p)
     assert cost == pytest.approx(-0.2 * 2.0 + 0.0, abs=1e-9)
 
 
 def test_dp_no_export_credit_at_negative_price(params):  # negative price: fi = 0
-    p = replace(params, c_rate=1.0)
+    p = replace(params, power_kw=2.0)
     with_fi = dp_day([0.3, 0.3], [0.0, 0.0], [0.0, 0.0], [2.0, 0.0], 2.0, p)
     assert with_fi == 0.0  # charging from surplus (worth 0) and discharging nowhere useful
 
@@ -142,7 +142,7 @@ def test_dp_wear_makes_trading_unprofitable(params):
 def test_grid_import_limit_blocks_cheap_night_charging(params):  # AK-19
     cb, fi = [0.05, 0.40], [0.0, 0.0]
     imp, exp = [0.0, 3.0], [0.0, 0.0]
-    p = replace(params, c_rate=1.0, eta_rt=1.0)
+    p = replace(params, power_kw=3.0, eta_rt=1.0)
     free = dp_day(cb, fi, imp, exp, 3.0, p)
     assert free == pytest.approx(-3.0 * 0.40 + 3.0 * 0.05)  # charge 3 kWh at night, use at noon
     # connection allows 1 kW import: only one 1 kWh step can be charged in that hour
@@ -158,7 +158,7 @@ def test_grid_import_limit_blocks_cheap_night_charging(params):  # AK-19
 def test_grid_export_limit_blocks_discharging_into_the_grid(params):  # AK-19
     cb, fi = [0.05, 0.40], [0.0629, 0.0629]
     exp = [0.0, 0.0]
-    p = replace(params, c_rate=1.0, eta_rt=1.0)
+    p = replace(params, power_kw=3.0, eta_rt=1.0)
     imp_use = [0.0, 1.0]
     free = dp_day(cb, fi, imp_use, exp, 3.0, p)
     assert free < 0  # 1 kWh replaces import at 0.40, the rest earns the feed-in price
@@ -267,3 +267,27 @@ def test_evaluate_with_grid_limit_never_saves_more(params, windows):  # AK-19
         assert limited.szenarien[name].speicher <= s.speicher + 1e-9
         assert limited.szenarien[name].passiv == pytest.approx(s.passiv)  # baseline unchanged
     assert limited.szenarien["dynamisch"].speicher < free.szenarien["dynamisch"].speicher
+
+
+def test_power_limits_charging_per_hour(params):  # AK-22
+    cb, fi = [0.05, 0.40], [0.0, 0.0]
+    imp, exp = [0.0, 5.0], [0.0, 0.0]
+    p = replace(params, eta_rt=1.0)
+    # 4 kWh storage, 2 kW power: only 2 kWh can be moved in the one cheap hour
+    assert dp_day(cb, fi, imp, exp, 4.0, replace(p, power_kw=2.0)) == pytest.approx(-2 * 0.35)
+    assert dp_day(cb, fi, imp, exp, 4.0, replace(p, power_kw=4.0)) == pytest.approx(-4 * 0.35)
+    # an explicit power overrides the parameter (used for storage plus extension)
+    assert dp_day(cb, fi, imp, exp, 4.0, replace(p, power_kw=2.0), power_kw=4.0) == pytest.approx(
+        -4 * 0.35
+    )
+
+
+def test_extension_power_adds_to_the_existing_power(params, windows):  # AK-22
+    day = [Hour(h, 3.0, 0.0, 0.02 if h < 2 else 0.40) for h in range(24)]
+    same_inverter = evaluate(
+        _year(day), replace(params, extra_power_kw=0.0), windows, ref_year=2026, min_days=5
+    )
+    more_power = evaluate(_year(day), params, windows, ref_year=2026, min_days=5)
+    dyn_same, dyn_more = same_inverter.szenarien["dynamisch"], more_power.szenarien["dynamisch"]
+    assert dyn_same.speicher == pytest.approx(dyn_more.speicher)  # existing storage unchanged
+    assert dyn_more.erweiterung > dyn_same.erweiterung  # more power helps in two cheap hours

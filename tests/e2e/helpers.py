@@ -106,6 +106,18 @@ def import_statistics(ha: HA, days: int | None) -> dict[str, dict[datetime, floa
                 }
             )
     ha.ws_commands(commands)
+    # give the sensors a state as well, as in a real installation (no state_class: the recorder must
+    # not compile statistics of its own on top of the imported ones)
+    for entity_id, value, unit in (
+        (IMPORT_ID, _meter(imp)[-1]["state"], "kWh"),
+        (EXPORT_ID, _meter(exp)[-1]["state"], "kWh"),
+        (PRICE_ID, spot[max(spot)], "EUR/kWh"),
+    ):
+        ha.request(
+            "POST",
+            f"/api/states/{entity_id}",
+            {"state": str(value), "attributes": {"unit_of_measurement": unit}},
+        )
     last = max(spot)
     for statistic_id in (IMPORT_ID, EXPORT_ID, PRICE_ID):
         # the import is queued to the recorder thread: wait until the last hour is readable

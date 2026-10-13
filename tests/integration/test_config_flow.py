@@ -100,29 +100,31 @@ async def test_second_instance_needs_a_unique_name(hass: HomeAssistant):  # AK-2
     assert done["title"] == "Standort B"
 
 
-async def test_options_flow_changes_sources(hass: HomeAssistant, entry):  # AK-11
+async def test_topic_changes_sensor_and_reloads(hass: HomeAssistant, entry):  # AK-11, AK-18
     hass.states.async_set("sensor.other_price", "0.1")
     _states(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     menu = await hass.config_entries.options.async_init(entry.entry_id)
     assert menu["type"] is FlowResultType.MENU
-    result = await hass.config_entries.options.async_configure(
-        menu["flow_id"], {"next_step_id": "sources"}
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "tarife"}
     )
-    assert result["type"] is FlowResultType.FORM
+    assert form["type"] is FlowResultType.FORM
+    values = {k.schema: k.default() for k in form["data_schema"].schema if k.schema != "hilfe"}
+    assert values[CONF_PRICE] == PRICE_ID  # the current sensor is preselected
     bad = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        {CONF_IMPORT: IMPORT_ID, CONF_EXPORT: EXPORT_ID, CONF_PRICE: "sensor.missing"},
+        form["flow_id"], {**values, CONF_PRICE: "sensor.missing", "fixed": 39.4}
     )
     assert bad["errors"] == {CONF_PRICE: "entity_not_found"}
+    assert entry.runtime_data.params["fixed"] == 34.1  # nothing saved on error
     done = await hass.config_entries.options.async_configure(
-        bad["flow_id"],
-        {CONF_IMPORT: IMPORT_ID, CONF_EXPORT: EXPORT_ID, CONF_PRICE: "sensor.other_price"},
+        bad["flow_id"], {**values, CONF_PRICE: "sensor.other_price", "fixed": 39.4}
     )
-    assert done["type"] is FlowResultType.CREATE_ENTRY
+    assert done["type"] is FlowResultType.CREATE_ENTRY  # sensor changed -> entry reloads
     await hass.async_block_till_done()
-    assert entry.runtime_data.sources[2] == "sensor.other_price"
+    assert entry.runtime_data.sources == (IMPORT_ID, EXPORT_ID, "sensor.other_price")
+    assert entry.runtime_data.params["fixed"] == 39.4  # survived the reload
 
 
 async def test_sources_are_not_prefilled(hass: HomeAssistant):  # AK-11

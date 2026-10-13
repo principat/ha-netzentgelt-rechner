@@ -62,36 +62,41 @@ def test_flow_error_keys_are_translated():  # AK-11, AK-14, AK-20
         assert "options.error.entity_not_found" in texts
 
 
-SECTIONS = ("netzentgelt", "tarife", "speicher", "anschluss")
+TOPICS = ("netzentgelt", "tarife", "speicher", "anschluss")
+SENSORS = {"tarife": ("price_entity",), "anschluss": ("import_entity", "export_entity")}
 
 
 @pytest.mark.parametrize("name", FILES)
-def test_every_number_input_has_a_label_and_help(name):  # AK-18
+def test_every_input_has_a_label_and_help_in_its_topic(name):  # AK-18
     from custom_components.netzentgelt_rechner.const import NUMBER_PARAMS
 
     texts = _flatten(_load(name))
-    prefix = "options.step.inputs.sections."
-    labelled = {
-        key: texts[f"{prefix}{sec}.data.{key}"]
-        for sec in SECTIONS
-        for key in NUMBER_PARAMS
-        if f"{prefix}{sec}.data.{key}" in texts
-    }
-    assert labelled.keys() == NUMBER_PARAMS.keys()  # each field is in exactly one section
-    help_text = texts[prefix + "hilfe.data_description.help"]
-    for key, label in labelled.items():
-        line = next((x for x in help_text.splitlines() if x.startswith(f"**{label}** \u2013 ")), "")
-        assert len(line.split(": ")) >= 4, (name, key)  # why / enter / source all present
-    for sec in ("hilfe", *SECTIONS):
-        assert texts[f"{prefix}{sec}.name"], (name, sec)
+    found: dict[str, str] = {}
+    for topic in TOPICS:
+        step = f"options.step.{topic}"
+        keys = [k.rsplit(".", 1)[1] for k in texts if k.startswith(f"{step}.data.")]
+        help_text = texts[f"{step}.sections.hilfe.data_description.help"]
+        for key in keys:
+            assert key not in found, (name, key)  # each field lives in exactly one topic
+            found[key] = topic
+            label = texts[f"{step}.data.{key}"]
+            line = next(
+                (x for x in help_text.splitlines() if x.startswith(f"**{label}** \u2013 ")), ""
+            )
+            assert len(line.split(": ")) >= 4, (name, topic, key)  # why / enter / source
+        for sensor in SENSORS.get(topic, ()):
+            assert found.get(sensor) == topic, (name, sensor)
+            assert texts[f"{step}.data_description.{sensor}"], (name, sensor)
+        assert texts[f"{step}.title"] and texts[f"{step}.sections.hilfe.name"]
+        assert texts[f"options.step.init.menu_options.{topic}"]
+    assert set(NUMBER_PARAMS) | {s for v in SENSORS.values() for s in v} == set(found)
 
 
 @pytest.mark.parametrize("name", FILES)
 def test_sources_and_window_fields_have_descriptions(name):  # AK-18
     texts = _flatten(_load(name))
-    for step in ("config.step.user", "options.step.sources"):
-        for field in ("import_entity", "export_entity", "price_entity"):
-            assert texts[f"{step}.data_description.{field}"], (name, step, field)
+    for field in ("import_entity", "export_entity", "price_entity"):
+        assert texts[f"config.step.user.data_description.{field}"], (name, field)
     for step in ("window_add", "window_edit_form"):
         for field in ("stage", "start_date", "end_date", "from_hour", "to_hour"):
             assert texts[f"options.step.{step}.data_description.{field}"], (name, step, field)

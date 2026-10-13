@@ -16,7 +16,7 @@ from typing import Any
 
 import pytest
 from ha_client import HA
-from helpers import DOMAIN, NUMBER_PARAMS, import_statistics, press_and_wait, setup_integration
+from helpers import DOMAIN, import_statistics, press_and_wait, setup_integration
 from playwright.sync_api import Browser, Page, sync_playwright
 
 pytestmark = [pytest.mark.e2e, pytest.mark.ui]
@@ -87,56 +87,60 @@ def shot(page: Page, name: str, lang: str) -> None:
 
 def open_options_menu(page: Page, lang: str) -> None:
     page.get_by_label(HA_TEXT[lang]["configure"]).first.click()
-    page.get_by_text(tr(lang, "options.step.init.menu_options.inputs")).wait_for()
+    page.get_by_text(tr(lang, "options.step.init.menu_options.netzentgelt")).wait_for()
+
+
+TOPICS = ("netzentgelt", "tarife", "speicher", "anschluss")
 
 
 @pytest.mark.parametrize("lang", LANGS)
 def test_ui_1_options_menu_lists_tariff_windows(browser, ui_ids, lang):  # AK-13
     page = open_page(browser, lang, f"/config/integrations/integration/{DOMAIN}")
     open_options_menu(page, lang)
-    for entry in ("inputs", "window_add", "window_edit", "window_delete", "sources"):
+    for entry in (*TOPICS, "window_add", "window_edit", "window_delete"):
         assert page.get_by_text(tr(lang, f"options.step.init.menu_options.{entry}")).is_visible()
-    assert page.get_by_text(re.compile(r"NT 01\.01\.\d{4}.+23:00.+05:00")).is_visible()
+    # the overview shows the grid fee of each window and of the standard stage (docs/01 §7)
+    assert page.get_by_text(
+        re.compile(r"NT 01\.01\.\d{4}.+23:00.+05:00: 4[,.]41 ct/kWh")
+    ).is_visible()
+    assert page.get_by_text(re.compile(r"11[,.]06 ct/kWh")).is_visible()
     shot(page, "01-options-menu", lang)
     page.context.close()
 
 
+@pytest.mark.parametrize("topic", TOPICS)
 @pytest.mark.parametrize("lang", LANGS)
-def test_ui_2_inputs_dialog_has_collapsed_readable_help(browser, ui_ids, lang):  # AK-18
+def test_ui_2_topic_has_collapsed_readable_help(browser, ui_ids, lang, topic):  # AK-18
     page = open_page(browser, lang, f"/config/integrations/integration/{DOMAIN}")
     open_options_menu(page, lang)
-    page.get_by_text(tr(lang, "options.step.init.menu_options.inputs")).click()
-    help_title = tr(lang, "options.step.inputs.sections.hilfe.name")
+    page.get_by_text(tr(lang, f"options.step.init.menu_options.{topic}")).click()
+    help_title = tr(lang, f"options.step.{topic}.sections.hilfe.name")
     page.get_by_text(help_title).wait_for()
+    labels = list(_texts(lang, f"options.step.{topic}.data").values())
+    page.locator("ha-selector-number", has_text=labels[-1]).first.wait_for()  # fully rendered
 
     why = page.get_by_text(re.compile(r"(Wozu|Why):")).first
     assert not why.is_visible(), "the help block must start collapsed"
-    group = tr(lang, "options.step.inputs.sections.netzentgelt.name")
-    assert page.get_by_role("heading", name=group).first.is_visible()
-    shot(page, "02-inputs-collapsed", lang)
+    shot(page, f"02-{topic}-collapsed", lang)
 
     page.get_by_text(help_title).click()
     why.wait_for(state="visible")
-    # readable Markdown (bold labels, headings) and no template editor widget or raw markup
+    page.wait_for_timeout(800)  # let the expand animation finish before the screenshot
+    # readable Markdown and no template editor widget or raw markup
     assert page.locator("ha-code-editor").count() == 0
-    assert "{{" not in page.inner_text("body") and "**" not in page.inner_text("body")
-    for key, (_, _, _, _, _, _) in NUMBER_PARAMS.items():
-        label = next(
-            tr(lang, f"options.step.inputs.sections.{sec}.data.{key}")
-            for sec in ("netzentgelt", "tarife", "speicher", "anschluss")
-            if _has(lang, sec, key)
-        )
-        assert page.locator("strong", has_text=label).count() >= 1, (lang, key)
-    shot(page, "03-inputs-help-open", lang)
+    body = page.inner_text("body")
+    assert "{{" not in body and "**" not in body
+    for label in labels:
+        assert page.locator("strong", has_text=label).count() >= 1, (lang, topic, label)
+    shot(page, f"03-{topic}-help-open", lang)
     page.context.close()
 
 
-def _has(lang: str, sec: str, key: str) -> bool:
-    try:
-        tr(lang, f"options.step.inputs.sections.{sec}.data.{key}")
-    except KeyError:
-        return False
-    return True
+def _texts(lang: str, path: str) -> dict[str, str]:
+    node: Any = json.loads((TRANSLATIONS / f"{lang}.json").read_text(encoding="utf-8"))
+    for part in path.split("."):
+        node = node[part]
+    return dict(node)
 
 
 @pytest.mark.parametrize("lang", LANGS)
@@ -146,16 +150,12 @@ def test_ui_3_saving_changes_the_values_without_recalculation(  # AK-18, AK-2
     before = ha.state(ui_ids["wirtschaftlichkeit"])["attributes"]["berechnet_am"]
     page = open_page(browser, lang, f"/config/integrations/integration/{DOMAIN}")
     open_options_menu(page, lang)
-    page.get_by_text(tr(lang, "options.step.init.menu_options.inputs")).click()
-    label = tr(lang, "options.step.inputs.sections.netzentgelt.data.nt")
+    page.get_by_text(tr(lang, "options.step.init.menu_options.netzentgelt")).click()
+    label = tr(lang, "options.step.netzentgelt.data.nt")
     field = page.locator("ha-selector-number", has_text=label).locator("input").first
     field.fill("5.5")
-    page.mouse.move(640, 500)
-    page.mouse.wheel(0, 4000)  # the end of the form: the grid connection group
-    page.wait_for_timeout(500)
-    shot(page, "04-inputs-bottom", lang)
     page.get_by_text(HA_TEXT[lang]["submit"], exact=True).click()
-    page.get_by_text(tr(lang, "options.step.init.menu_options.inputs")).wait_for()  # back at menu
+    page.get_by_text(tr(lang, "options.step.init.menu_options.speicher")).wait_for()  # menu
     assert float(ha.state(ui_ids["nt"])["state"]) == 5.5
     assert ha.state(ui_ids["wirtschaftlichkeit"])["attributes"]["berechnet_am"] == before
     ha.call("number", "set_value", entity_id=ui_ids["nt"], value=4.41)

@@ -47,14 +47,19 @@ async def test_menu_lists_current_windows(hass: HomeAssistant, entry):  # AK-13
     await setup_entry(hass, entry)
     menu = await hass.config_entries.options.async_init(entry.entry_id)
     assert menu["menu_options"] == [
-        "inputs",
+        "netzentgelt",
+        "tarife",
+        "speicher",
+        "anschluss",
         "window_add",
         "window_edit",
         "window_delete",
-        "sources",
     ]
     shown = menu["description_placeholders"]["windows"]
-    assert "NT 01.01.2026\u201331.12.2026, 23:00\u201305:00" in shown
+    # the overview shows the grid fee of each window and of the standard stage
+    assert "NT 01.01.2026\u201331.12.2026, 23:00\u201305:00: 4.41 ct/kWh" in shown
+    assert "HT 01.01.2026\u201331.12.2026, 11:00\u201313:00: 16.07 ct/kWh" in shown
+    assert menu["description_placeholders"]["standard"] == "11.06 ct/kWh"
     assert shown.count("- ") == 3
 
 
@@ -62,7 +67,7 @@ async def test_menu_without_windows_hides_edit_and_delete(hass: HomeAssistant, e
     await setup_entry(hass, entry)
     entry.runtime_data.async_set_windows([])
     menu = await hass.config_entries.options.async_init(entry.entry_id)
-    assert menu["menu_options"] == ["inputs", "window_add", "sources"]
+    assert menu["menu_options"] == ["netzentgelt", "tarife", "speicher", "anschluss", "window_add"]
     assert menu["description_placeholders"]["windows"] == "\u2013"
 
 
@@ -294,3 +299,11 @@ async def test_legacy_quarter_windows_and_text_entities_are_migrated(  # AK-17
     assert not [
         e for e in er.async_entries_for_config_entry(registry, ENTRY_ID) if e.domain == "text"
     ]
+
+
+async def test_overview_uses_the_decimal_comma_in_german(hass, entry):  # docs/01 §7
+    await hass.config.async_update(language="de")
+    await setup_entry(hass, entry)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    assert ": 4,41 ct/kWh" in menu["description_placeholders"]["windows"]
+    assert menu["description_placeholders"]["standard"] == "11,06 ct/kWh"

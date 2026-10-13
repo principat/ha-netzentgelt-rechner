@@ -86,7 +86,9 @@ class Hub:
         stored = await self._store.async_load()
         if not stored:
             return
-        for key, value in (stored.get("params") or {}).items():
+        params = dict(stored.get("params") or {})
+        self._migrate_c_rate(params)
+        for key, value in params.items():
             if key in self.params and isinstance(value, int | float):
                 self.params[key] = float(value)
         windows = self._parse_windows(stored.get("windows"))
@@ -98,6 +100,19 @@ class Hub:
         if status == STATUS_RUNNING:  # HA stopped during a run
             status = STATUS_DONE if self.results else STATUS_NONE
         self.status = status
+
+    def _migrate_c_rate(self, params: dict[str, Any]) -> None:
+        """Versions <= 1.1 stored a C-rate; convert it into powers in kW (AK-22)."""
+        c_rate = params.pop("c_rate", None)
+        if not isinstance(c_rate, int | float) or "power_kw" in params:
+            return
+
+        def capacity(key: str) -> float:
+            value = params.get(key, self.params[key])
+            return float(value) if isinstance(value, int | float) else self.params[key]
+
+        params["power_kw"] = round(c_rate * capacity("flex_kwh"), 2)
+        params["extra_power_kw"] = round(c_rate * capacity("extra_kwh"), 2)
 
     @staticmethod
     def _parse_windows(raw: Any) -> list[calc.TariffWindow] | None:

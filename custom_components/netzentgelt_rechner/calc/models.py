@@ -29,7 +29,8 @@ class Params:
     eta_rt: float  # fraction (round trip)
     flex_kwh: float
     extra_kwh: float
-    c_rate: float
+    power_kw: float  # charge/discharge power of the existing storage
+    extra_power_kw: float  # additional power of the extension
     wear: float  # EUR/kWh throughput
     invest: float  # EUR
     grid_import_kw: float = 0.0  # connection limit, 0 = unlimited

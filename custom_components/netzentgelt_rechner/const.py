@@ -20,14 +20,15 @@ NUMBER_PARAMS: dict[str, tuple[str, str, float, float, float, float]] = {
     "levies": ("Umlagen und Steuern (brutto)", "ct/kWh", 0, 30, 0.01, 8.8),
     "vat": ("Mehrwertsteuer", "%", 0, 30, 0.1, 19.0),
     "markup": ("Aufschlag dynamischer Tarif (netto)", "ct/kWh", -5, 20, 0.01, 2.0),
-    "dyn_base": ("Mehr-Grundgebuehr dynamischer Tarif", "€/Jahr", -500, 1000, 0.5, 40.0),
+    "dyn_base": ("Mehr-Grundgebühr dynamischer Tarif", "€/Jahr", -500, 1000, 0.5, 40.0),
     "rebate": ("Modul-1-Pauschale", "€/Jahr", 0, 1000, 0.01, 162.91),
     "m3_base_delta": ("Zusatz-Grundpreis Modul 3", "€/Jahr", -500, 1000, 0.5, 0.0),
     "feedin": ("Einspeisevergütung", "ct/kWh", 0, 30, 0.01, 6.29),
     "eta_rt": ("Wirkungsgrad Speicher (Laden und Entladen)", "%", 50, 100, 0.5, 88.0),
     "flex_kwh": ("Nutzbare Speicherkapazität (vorhanden)", "kWh", 0, 200, 0.1, 13.5),
     "extra_kwh": ("Nutzbare Kapazität der Speichererweiterung", "kWh", 0, 200, 0.1, 14.4),
-    "c_rate": ("Speicherleistung (C-Rate)", "1/h", 0.1, 3, 0.05, 0.5),
+    "power_kw": ("Lade-/Entladeleistung des Speichers", "kW", 0.1, 100, 0.1, 6.75),
+    "extra_power_kw": ("Zusätzliche Lade-/Entladeleistung der Erweiterung", "kW", 0, 100, 0.1, 7.2),
     "grid_import_kw": (
         "Netzanschluss: maximale Bezugsleistung (0 = unbegrenzt)",
         "kW",
@@ -58,3 +59,12 @@ STATUS_RUNNING = "rechnet"
 STATUS_DONE = "fertig"
 STATUS_ERROR = "fehler"
 STATUSES = (STATUS_NONE, STATUS_RUNNING, STATUS_DONE, STATUS_ERROR)
+
+# unique_id suffixes of entities that older versions created and that no longer exist
+LEGACY_ENTITIES = (
+    ("text", "zeitfenster_q1"),
+    ("text", "zeitfenster_q2"),
+    ("text", "zeitfenster_q3"),
+    ("text", "zeitfenster_q4"),
+    ("number", "c_rate"),
+)

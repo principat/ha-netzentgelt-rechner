@@ -53,13 +53,15 @@ _WINDOW_ERRORS = {
     "overlap": ("start_date", "window_overlap"),
 }
 
-# Number inputs of the "inputs" dialog by topic; the help block lists them in the same order (AK-18)
-_INPUT_GROUPS = {
+# Options-menu topics: number inputs and the source sensors that belong to them (AK-18).
+# The help block of each topic lists its fields in the same order.
+TOPICS = {
     "netzentgelt": ("st", "nt", "ht", "rebate", "m3_base_delta"),
     "tarife": ("fixed", "levies", "vat", "markup", "dyn_base", "feedin"),
-    "speicher": ("flex_kwh", "extra_kwh", "invest", "eta_rt", "c_rate", "wear"),
+    "speicher": ("flex_kwh", "extra_kwh", "power_kw", "extra_power_kw", "invest", "eta_rt", "wear"),
     "anschluss": ("grid_import_kw", "grid_export_kw"),
 }
+TOPIC_SOURCES = {"tarife": (CONF_PRICE,), "anschluss": (CONF_IMPORT, CONF_EXPORT)}
 
 # stage <-> selector option (translation keys must be lowercase, hassfest)
 _STAGE_OPTION = {"N": "nt", "H": "ht"}
@@ -87,7 +89,7 @@ async def _validate(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str
     """Return field errors; an entity is valid if it has a state or statistics metadata."""
     known = {item["statistic_id"] for item in await async_list_statistic_ids(hass)}
     errors: dict[str, str] = {}
-    for key in _FIELDS:
+    for key in (k for k in _FIELDS if k in user_input):
         entity_id = user_input[key]
         if hass.states.get(entity_id) is None and entity_id not in known:
             errors[key] = "entity_not_found"
@@ -136,6 +138,12 @@ def describe_window(w: calc.TariffWindow) -> str:
     )
 
 
+def format_ct(value: float, language: str) -> str:
+    """'4,41 ct/kWh' (German) or '4.41 ct/kWh'."""
+    text = f"{value:.2f}"
+    return (text.replace(".", ",") if language.startswith("de") else text) + " ct/kWh"
+
+
 def _window_schema(defaults: dict[str, Any]) -> vol.Schema:
     def hours(low: int, high: int) -> NumberSelector:
         return NumberSelector(
@@ -164,8 +172,10 @@ def _window_schema(defaults: dict[str, Any]) -> vol.Schema:
     )
 
 
-def _inputs_schema(params: dict[str, float]) -> vol.Schema:
-    """Number inputs by topic, preceded by a collapsed block that carries the help texts."""
+def _topic_schema(
+    topic: str, params: dict[str, float] | None, sources: dict[str, Any]
+) -> vol.Schema:
+    """A topic form: collapsed help block, the topic's sensors, then its number inputs."""
 
     def number(key: str) -> NumberSelector:
         _, unit, low, high, step, _ = NUMBER_PARAMS[key]
@@ -182,11 +192,12 @@ def _inputs_schema(params: dict[str, float]) -> vol.Schema:
     # display-only field: its translated data_description is the help Markdown
     help_block = section(vol.Schema({vol.Optional("help"): BooleanSelector()}), {"collapsed": True})
     fields: dict[Any, Any] = {vol.Optional("hilfe"): help_block}
-    for group, keys in _INPUT_GROUPS.items():
-        fields[vol.Required(group)] = section(
-            vol.Schema({vol.Required(k, default=params[k]): number(k) for k in keys}),
-            {"collapsed": False},
-        )
+    sensor = EntitySelector(EntitySelectorConfig(domain="sensor"))
+    for key in TOPIC_SOURCES.get(topic, ()):
+        fields[vol.Required(key, default=sources[key])] = sensor
+    if params is not None:  # without a loaded instance only the sensors can be changed
+        for key in TOPICS[topic]:
+            fields[vol.Required(key, default=params[key])] = number(key)
     return vol.Schema(fields)
 
 
@@ -202,43 +213,73 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         hub = self._hub
-        menu: list[str] = []
+        if hub is None:  # instance not loaded: only the sensors can be fixed
+            return self.async_show_menu(
+                step_id="init",
+                menu_options=list(TOPIC_SOURCES),
+                description_placeholders={"windows": "\u2013", "standard": "\u2013"},
+            )
+        language = self.hass.config.language
+        menu = [*TOPICS, "window_add"]
         shown = "\u2013"
-        if hub is not None:
-            menu += ["inputs", "window_add"]
-            if hub.windows:
-                menu += ["window_edit", "window_delete"]
-                shown = "\n".join(f"- {describe_window(w)}" for w in hub.windows)
-        menu.append("sources")
+        if hub.windows:
+            menu += ["window_edit", "window_delete"]
+            price = {"N": hub.params["nt"], "H": hub.params["ht"]}
+            shown = "\n".join(
+                f"- {describe_window(w)}: {format_ct(price[w.stage], language)}"
+                for w in hub.windows
+            )
         return self.async_show_menu(
-            step_id="init", menu_options=menu, description_placeholders={"windows": shown}
+            step_id="init",
+            menu_options=menu,
+            description_placeholders={
+                "windows": shown,
+                "standard": format_ct(hub.params["st"], language),
+            },
         )
 
-    async def async_step_inputs(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Edit all number inputs with a collapsed help block (AK-18); no recalculation."""
-        hub = self._hub
-        if hub is None:
-            return await self.async_step_init()
-        if user_input is not None:
-            values = {
-                key: float(value)
-                for group in _INPUT_GROUPS
-                for key, value in user_input[group].items()
-            }  # the help block ("hilfe") is display-only and never stored
-            hub.async_set_params(values)
-            return await self.async_step_init()
-        return self.async_show_form(step_id="inputs", data_schema=_inputs_schema(hub.params))
-
-    async def async_step_sources(
+    async def async_step_netzentgelt(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        return await self._topic("netzentgelt", user_input)
+
+    async def async_step_tarife(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return await self._topic("tarife", user_input)
+
+    async def async_step_speicher(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._topic("speicher", user_input)
+
+    async def async_step_anschluss(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._topic("anschluss", user_input)
+
+    async def _topic(self, topic: str, user_input: dict[str, Any] | None) -> ConfigFlowResult:
+        """Edit one topic: number inputs (no recalculation) and its sensors (reload on change)."""
+        hub = self._hub
+        sources = {k: v for k, v in {**self.config_entry.data, **self.config_entry.options}.items()}
         errors: dict[str, str] = {}
-        if user_input is not None:
-            errors = await _validate(self.hass, user_input)
+        if user_input is not None:  # the help block ("hilfe") is display-only and never stored
+            chosen = {k: user_input[k] for k in TOPIC_SOURCES.get(topic, ())}
+            errors = await _validate(self.hass, chosen)
             if not errors:
-                return self.async_create_entry(data=user_input)
-        current = {**self.config_entry.data, **self.config_entry.options, **(user_input or {})}
-        return self.async_show_form(step_id="sources", data_schema=_schema(current), errors=errors)
+                if hub is not None:
+                    hub.async_set_params({k: float(user_input[k]) for k in TOPICS[topic]})
+                if any(sources.get(k) != v for k, v in chosen.items()):
+                    # new sensors: store them as options; the entry reloads (data saved on unload)
+                    return self.async_create_entry(
+                        data={k: sources[k] for k in _FIELDS if k in sources} | chosen
+                    )
+                return await self.async_step_init()
+            sources |= chosen
+        params = None if hub is None else {**hub.params, **(user_input or {})}
+        return self.async_show_form(
+            step_id=topic,
+            data_schema=_topic_schema(topic, params, sources),
+            errors=errors,
+        )
 
     # ---------------------------------------------------------------- tariff windows
 

@@ -16,7 +16,7 @@ def brute(cb, fi, imp, exp, cap, p: Params) -> float:
     q = p.step
     n = int(cap / q)
     eta = math.sqrt(p.eta_rt)
-    pmax = p.c_rate * cap
+    pmax = p.power_kw
     kc = max(1, int(pmax * eta / q))
     kd = max(1, int(pmax / (eta * q)))
     best = 0.0
@@ -68,7 +68,7 @@ feed = st.lists(st.sampled_from([0.0, 0.0629]), min_size=HOURS, max_size=HOURS)
     wear=st.sampled_from([0.0, 0.01]),
 )
 def test_dp_equals_bruteforce(params, cb, fi, imp, exp, cap, wear):  # AK-4
-    p = replace(params, c_rate=1.0, wear=wear)
+    p = replace(params, power_kw=cap, wear=wear)
     assert abs(dp_day(cb, fi, imp, exp, cap, p) - brute(cb, fi, imp, exp, cap, p)) < 1e-9
 
 
@@ -89,7 +89,7 @@ def test_dp_equals_bruteforce(params, cb, fi, imp, exp, cap, wear):  # AK-4
 def test_dp_with_grid_limits_equals_bruteforce(  # AK-4, AK-19
     params, cb, fi, imp, exp, cap, grid_import, grid_export
 ):
-    p = replace(params, c_rate=1.0, grid_import_kw=grid_import, grid_export_kw=grid_export)
+    p = replace(params, power_kw=cap, grid_import_kw=grid_import, grid_export_kw=grid_export)
     assert abs(dp_day(cb, fi, imp, exp, cap, p) - brute(cb, fi, imp, exp, cap, p)) < 1e-9
     # a limit never helps (AK-19)
     free = replace(p, grid_import_kw=0.0, grid_export_kw=0.0)

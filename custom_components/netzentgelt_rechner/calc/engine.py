@@ -79,14 +79,19 @@ def dp_day(
     exp: Sequence[float],
     cap_kwh: float,
     p: Params,
+    *,
+    power_kw: float | None = None,
 ) -> float:
-    """Minimal extra cost of one day with ``cap_kwh`` storage (<= 0 means profit). Exact DP."""
+    """Minimal extra cost of one day with ``cap_kwh`` storage (<= 0 means profit). Exact DP.
+
+    ``power_kw`` (default ``p.power_kw``) limits charging and discharging per hour (AK-22).
+    """
     q = p.step
     n = int(cap_kwh / q + 1e-9)
     if n <= 0:
         return 0.0
     eta = math.sqrt(p.eta_rt)
-    pmax = p.c_rate * cap_kwh
+    pmax = p.power_kw if power_kw is None else power_kw
     kc = max(1, int(pmax * eta / q))  # max charge steps per hour (stored energy)
     kd = max(1, int(pmax / (eta * q)))  # max discharge steps per hour
     hours = len(cbuy)
@@ -159,7 +164,15 @@ def evaluate(
                 acc[s + "_flex"] += -dp_day(cb, fi, imp, exp, p.flex_kwh, p)
                 if pause is not None:
                     pause()
-                acc[s + "_ext"] += -dp_day(cb, fi, imp, exp, p.flex_kwh + p.extra_kwh, p)
+                acc[s + "_ext"] += -dp_day(
+                    cb,
+                    fi,
+                    imp,
+                    exp,
+                    p.flex_kwh + p.extra_kwh,
+                    p,
+                    power_kw=p.power_kw + p.extra_power_kw,
+                )
                 if pause is not None:
                     pause()
         acc["spot_sum"] += sum(x.spot for x in hrs)

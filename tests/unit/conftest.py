@@ -20,7 +20,8 @@ UI_DEFAULTS: dict[str, float] = {
     "eta_rt": 88.0,
     "flex_kwh": 13.5,
     "extra_kwh": 14.4,
-    "c_rate": 0.5,
+    "power_kw": 6.75,  # 0.5 C x 13.5 kWh (former c_rate default)
+    "extra_power_kw": 7.2,  # 0.5 C x 14.4 kWh
     "grid_import_kw": 0.0,
     "grid_export_kw": 0.0,
     "wear": 0.0,
