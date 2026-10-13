@@ -37,8 +37,8 @@ and in the options dialog:
 - **Dynamic tariff:** supplier markup (ct/kWh net) and extra base fee (EUR/year).
 - **Feed-in tariff** (ct/kWh).
 - **Battery data:** usable storage capacity (kWh, without reserves and manufacturer limits), usable capacity of a planned
-  extension (kWh), its cost (EUR),
-  round-trip efficiency, power (C-rate), wear cost.
+  extension (kWh), its cost (EUR), round-trip efficiency, charge/discharge power (kW, existing and added by
+  the extension), wear cost.
 
 ## Installation
 
@@ -47,9 +47,11 @@ and in the options dialog:
 2. Install *Netzentgelt-Rechner*, restart Home Assistant.
 3. *Settings → Devices & services → Add integration → Netzentgelt-Rechner*; pick your import meter,
    export meter and spot price sensor.
-4. Enter your values and tariff windows: *Configure* on the integration → **Edit inputs** (with a collapsed
-   help block that explains every field: why, what to enter, where to find it) and *Add tariff window*.
-   Experienced users can also change the numbers directly in the device's number entities. Then press *Neu berechnen* (recalculate). The result appears in
+4. Enter your values: *Configure* on the integration shows the tariff windows with their grid fees and one entry
+   per topic: **Grid fee**, **Electricity price and tariffs** (incl. the spot price sensor), **Battery**, **Grid
+   connection** (incl. the meters). Each topic starts with a collapsed help block that explains every field (why,
+   what to enter, where to find it). Experienced users can also change the numbers directly in the device's number
+   entities. Then press *Neu berechnen* (recalculate). The result appears in
    the *Wirtschaftlichkeit* (profitability) sensor; the current grid fee in the *Netzentgelt* sensor.
 
 You can set the integration up **several times** (e.g. to compare different base data or locations); give each
@@ -58,9 +60,9 @@ after another.
 
 ### Screenshots
 
-| Edit inputs (help collapsed) | Help block expanded |
-|---|---|
-| ![Edit inputs](docs/screenshots/02-inputs-collapsed-en.png) | ![Help expanded](docs/screenshots/03-inputs-help-open-en.png) |
+| Settings with tariff windows and fees | Battery (help collapsed) | Help block expanded |
+|---|---|---|
+| ![Settings](docs/screenshots/01-options-menu-en.png) | ![Battery](docs/screenshots/02-speicher-collapsed-en.png) | ![Help](docs/screenshots/03-netzentgelt-help-open-en.png) |
 
 License: MIT. Dashboard example: [`examples/en/dashboard.yaml`](examples/en/dashboard.yaml).
 
@@ -109,7 +111,8 @@ und im Optionsdialog ein:
 - **Dynamischer Tarif:** Aufschlag des Lieferanten (ct/kWh netto) und Mehr-Grundgebühr (€/Jahr).
 - **Einspeisevergütung** (ct/kWh).
 - **Speicherdaten:** nutzbare Speicherkapazität (kWh, ohne Reserven und Herstellergrenzen), nutzbare Kapazität einer
-  geplanten Erweiterung (kWh) und deren Kosten (€), Wirkungsgrad, Leistung (C-Rate), Verschleißkosten.
+  geplanten Erweiterung (kWh) und deren Kosten (€), Wirkungsgrad, Lade-/Entladeleistung (kW, vorhanden und zusätzlich durch die Erweiterung),
+  Verschleißkosten.
 
 ### Installation
 
@@ -118,9 +121,11 @@ und im Optionsdialog ein:
 2. *Netzentgelt-Rechner* installieren, Home Assistant neu starten.
 3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Netzentgelt-Rechner*; Bezugszähler,
    Einspeisezähler und Börsenpreis-Sensor wählen.
-4. Ihre Werte und Tarifzeiten eintragen: *Konfigurieren* an der Integration → **Eingaben bearbeiten** (mit
-   eingeklapptem Hilfeblock, der jedes Feld erklärt: wozu, was eintragen, woher) und *Tarifzeit hinzufügen*.
-   Geübte Nutzer können die Zahlen auch direkt in den Zahlen-Entitäten des Geräts ändern. Dann *Neu berechnen* drücken. Das Ergebnis steht im Sensor *Wirtschaftlichkeit*, das
+4. Ihre Werte eintragen: *Konfigurieren* an der Integration zeigt die Tarifzeiten mit ihrem Netzentgelt und je
+   Thema einen Eintrag: **Netzentgelt**, **Strompreis und Tarife** (inkl. Börsenpreis-Sensor), **Speicher**,
+   **Netzanschluss** (inkl. Zähler). Jedes Thema beginnt mit einem eingeklappten Hilfeblock, der jedes Feld erklärt
+   (wozu, was eintragen, woher). Geübte Nutzer können die Zahlen auch direkt in den Zahlen-Entitäten des Geräts
+   ändern. Dann *Neu berechnen* drücken. Das Ergebnis steht im Sensor *Wirtschaftlichkeit*, das
    aktuelle Netzentgelt im Sensor *Netzentgelt*.
 
 Die Integration lässt sich **mehrfach einrichten** (z. B. um verschiedene Basisdaten oder Standorte gegenüberzustellen);
@@ -129,9 +134,9 @@ Instanzen laufen nacheinander.
 
 #### Bildschirmfotos
 
-| Eingaben bearbeiten (Hilfe eingeklappt) | Hilfeblock aufgeklappt | Tarifzeit-Konflikt |
-|---|---|---|
-| ![Eingaben](docs/screenshots/02-inputs-collapsed-de.png) | ![Hilfe](docs/screenshots/03-inputs-help-open-de.png) | ![Konflikt](docs/screenshots/06-window-overlap-error-de.png) |
+| Einstellungen mit Tarifzeiten und Entgelten | Netzanschluss (Hilfe eingeklappt) | Hilfeblock aufgeklappt | Tarifzeit-Konflikt |
+|---|---|---|---|
+| ![Einstellungen](docs/screenshots/01-options-menu-de.png) | ![Netzanschluss](docs/screenshots/02-anschluss-collapsed-de.png) | ![Hilfe](docs/screenshots/03-tarife-help-open-de.png) | ![Konflikt](docs/screenshots/06-window-overlap-error-de.png) |
 
 Lizenz: MIT. Dashboard-Beispiel: [`examples/de/dashboard.yaml`](examples/de/dashboard.yaml).
 
