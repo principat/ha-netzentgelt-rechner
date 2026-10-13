@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/principat/ha-netzentgelt-rechner/compare/v1.1.1...v1.2.0) (2026-10-13)
+
+
+### Features
+
+* remember 'show help expanded' for all topics of an instance ([f3c65de](https://github.com/principat/ha-netzentgelt-rechner/commit/f3c65def722a62ed467547e415e339704959b89d))
+* topic menus with their sensors, fees in the tariff overview, power in kW ([469d1ba](https://github.com/principat/ha-netzentgelt-rechner/commit/469d1babae4e9e41c155c0d2ce08598356148dae))
+
 ## [1.1.1](https://github.com/principat/ha-netzentgelt-rechner/compare/v1.1.0...v1.1.1) (2026-10-13)
 
 
