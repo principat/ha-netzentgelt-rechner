@@ -47,8 +47,9 @@ and in the options dialog:
 2. Install *Netzentgelt-Rechner*, restart Home Assistant.
 3. *Settings → Devices & services → Add integration → Netzentgelt-Rechner*; pick your import meter,
    export meter and spot price sensor.
-4. Enter your values (number entities on the device) and your tariff windows
-   (*Configure* on the integration), then press *Neu berechnen* (recalculate). The result appears in
+4. Enter your values and tariff windows: *Configure* on the integration → **Edit inputs** (with a collapsed
+   help block that explains every field: why, what to enter, where to find it) and *Add tariff window*.
+   Experienced users can also change the numbers directly in the device's number entities. Then press *Neu berechnen* (recalculate). The result appears in
    the *Wirtschaftlichkeit* (profitability) sensor; the current grid fee in the *Netzentgelt* sensor.
 
 You can set the integration up **several times** (e.g. to compare different base data or locations); give each
@@ -111,8 +112,9 @@ und im Optionsdialog ein:
 2. *Netzentgelt-Rechner* installieren, Home Assistant neu starten.
 3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Netzentgelt-Rechner*; Bezugszähler,
    Einspeisezähler und Börsenpreis-Sensor wählen.
-4. Ihre Werte (Zahlen-Entitäten am Gerät) und Tarifzeiten (*Konfigurieren* an der Integration)
-   eintragen, dann *Neu berechnen* drücken. Das Ergebnis steht im Sensor *Wirtschaftlichkeit*, das
+4. Ihre Werte und Tarifzeiten eintragen: *Konfigurieren* an der Integration → **Eingaben bearbeiten** (mit
+   eingeklapptem Hilfeblock, der jedes Feld erklärt: wozu, was eintragen, woher) und *Tarifzeit hinzufügen*.
+   Geübte Nutzer können die Zahlen auch direkt in den Zahlen-Entitäten des Geräts ändern. Dann *Neu berechnen* drücken. Das Ergebnis steht im Sensor *Wirtschaftlichkeit*, das
    aktuelle Netzentgelt im Sensor *Netzentgelt*.
 
 Die Integration lässt sich **mehrfach einrichten** (z. B. um verschiedene Basisdaten oder Standorte gegenüberzustellen);

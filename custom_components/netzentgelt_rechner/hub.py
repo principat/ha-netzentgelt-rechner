@@ -156,6 +156,22 @@ class Hub:
         self._notify()
 
     @callback
+    def async_set_params(self, values: dict[str, float]) -> None:
+        """Set several parameters at once: all are validated first, then all applied (AK-18).
+
+        No recalculation is triggered (AK-2).
+        """
+        for key, value in values.items():
+            if key not in NUMBER_PARAMS:
+                raise ServiceValidationError(f"Unbekannter Parameter: {key}")
+            _, _, low, high, _, _ = NUMBER_PARAMS[key]
+            if not low <= value <= high:
+                raise ServiceValidationError(f"{key}: Wert {value} außerhalb {low}..{high}")
+        self.params.update({k: float(v) for k, v in values.items()})
+        self._schedule_save()
+        self._notify()
+
+    @callback
     def async_set_windows(self, windows: list[calc.TariffWindow]) -> None:
         """Replace the tariff windows (AK-13); raises calc.WindowError if invalid (AK-14).
 

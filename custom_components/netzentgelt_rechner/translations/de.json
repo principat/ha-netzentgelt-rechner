@@ -11,7 +11,10 @@
           "price_entity": "Strompreis-Verlauf"
         },
         "data_description": {
-          "name": "Eindeutiger Name dieser Einrichtung, z. B. der Standort. Er wird zum Gerätenamen."
+          "name": "Eindeutiger Name dieser Einrichtung, z. B. der Standort. Er wird zum Gerätenamen.",
+          "import_entity": "Sensor mit dem kumulierten Netzbezug in kWh (Zählerstand, Langzeitstatistik nötig).",
+          "export_entity": "Sensor mit der kumulierten Netzeinspeisung in kWh (Zählerstand, Langzeitstatistik nötig).",
+          "price_entity": "Sensor mit dem stündlichen Börsenpreis (Day-Ahead) in €/kWh netto, mit Langzeitstatistik."
         }
       }
     },
@@ -27,6 +30,7 @@
         "title": "Einstellungen",
         "description": "Aktuelle Tarifzeiten (HT = Hochtarif, NT = Niedertarif; alle übrigen Zeiten gelten als Standardstufe):\n\n{windows}",
         "menu_options": {
+          "inputs": "Eingaben bearbeiten",
           "sources": "Quellsensoren ändern",
           "window_add": "Tarifzeit hinzufügen",
           "window_edit": "Tarifzeit bearbeiten",
@@ -39,6 +43,11 @@
           "import_entity": "Zählerstand Bezug",
           "export_entity": "Zählerstand Einspeisung",
           "price_entity": "Strompreis-Verlauf"
+        },
+        "data_description": {
+          "import_entity": "Sensor mit dem kumulierten Netzbezug in kWh (Zählerstand, Langzeitstatistik nötig).",
+          "export_entity": "Sensor mit der kumulierten Netzeinspeisung in kWh (Zählerstand, Langzeitstatistik nötig).",
+          "price_entity": "Sensor mit dem stündlichen Börsenpreis (Day-Ahead) in €/kWh netto, mit Langzeitstatistik."
         }
       },
       "window_add": {
@@ -52,6 +61,9 @@
           "to_hour": "Endstunde"
         },
         "data_description": {
+          "stage": "Hochtarif (HT) oder Niedertarif (NT) laut Preisblatt Ihres Netzbetreibers.",
+          "start_date": "Erster Tag, an dem die Tarifzeit gilt.",
+          "end_date": "Letzter Tag (eingeschlossen), an dem die Tarifzeit gilt.",
           "from_hour": "Volle Stunde, ab der die Tarifzeit gilt (0–23).",
           "to_hour": "Volle Stunde, bis zu der sie gilt, ausschließlich (1–24). Ist sie kleiner als die Startstunde, gilt die Tarifzeit über Mitternacht (z. B. 23 bis 5)."
         }
@@ -73,6 +85,9 @@
           "to_hour": "Endstunde"
         },
         "data_description": {
+          "stage": "Hochtarif (HT) oder Niedertarif (NT) laut Preisblatt Ihres Netzbetreibers.",
+          "start_date": "Erster Tag, an dem die Tarifzeit gilt.",
+          "end_date": "Letzter Tag (eingeschlossen), an dem die Tarifzeit gilt.",
           "from_hour": "Volle Stunde, ab der die Tarifzeit gilt (0–23).",
           "to_hour": "Volle Stunde, bis zu der sie gilt, ausschließlich (1–24). Ist sie kleiner als die Startstunde, gilt die Tarifzeit über Mitternacht (z. B. 23 bis 5)."
         }
@@ -81,6 +96,66 @@
         "title": "Tarifzeiten löschen",
         "data": {
           "windows": "Zu löschende Tarifzeiten"
+        }
+      },
+      "inputs": {
+        "title": "Eingaben bearbeiten",
+        "sections": {
+          "hilfe": {
+            "name": "Hilfe zu den Feldern (aufklappen)",
+            "description": "Wozu das Feld dient, was einzutragen ist und woher der Wert kommt.",
+            "data": {
+              "help_netzentgelt": "Netzentgelt (Preisblatt des Netzbetreibers)",
+              "help_tarife": "Strompreis und Tarife",
+              "help_speicher": "Speicher",
+              "help_anschluss": "Netzanschluss"
+            },
+            "data_description": {
+              "help_netzentgelt": "**Netzentgelt Standardstufe (brutto)** – Wozu: Netzentgelt außerhalb der Hoch- und Niedertarifzeiten; auch Basis des dynamischen Tarifs. Eintragen: ct/kWh brutto (inkl. MwSt.). Woher: Preisblatt Netzentgelte Ihres Netzbetreibers, Standard-Arbeitspreis.\n\n**Netzentgelt Niedertarif (brutto)** – Wozu: Arbeitspreis des Netzentgelts in den Niedertarifzeiten von Modul 3. Eintragen: ct/kWh brutto. Woher: Preisblatt „zeitvariable Netzentgelte“ Ihres Netzbetreibers.\n\n**Netzentgelt Hochtarif (brutto)** – Wozu: Arbeitspreis des Netzentgelts in den Hochtarifzeiten von Modul 3. Eintragen: ct/kWh brutto. Woher: Preisblatt „zeitvariable Netzentgelte“ Ihres Netzbetreibers.\n\n**Modul-1-Pauschale** – Wozu: Pauschale Netzentgelt-Reduzierung für steuerbare Verbrauchseinrichtungen (Modul 1); Voraussetzung für Modul 3. Eintragen: € pro Jahr brutto. Woher: Preisblatt Ihres Netzbetreibers (§14a, Modul 1) oder Ihr Bescheid.\n\n**Zusatz-Grundpreis Modul 3** – Wozu: Mehrkosten pro Jahr für Modul 3 gegenüber heute, z. B. höheres Messstellenentgelt. Eintragen: € pro Jahr; 0, wenn keine Mehrkosten bekannt sind. Woher: Netzbetreiber bzw. Messstellenbetreiber.",
+              "help_tarife": "**Arbeitspreis heute (brutto)** – Wozu: Ihr heutiger Strompreis; Referenz, gegen die alle Ersparnisse gerechnet werden. Eintragen: Arbeitspreis in ct/kWh brutto, alles inklusive (Energie, Netzentgelt, Umlagen, Steuern). Woher: Ihre Stromrechnung oder der Liefervertrag.\n\n**Umlagen und Steuern (brutto)** – Wozu: Anteil des Preises, der unabhängig vom Tarif bleibt (Konzessionsabgabe, Umlagen, Stromsteuer). Eintragen: Summe in ct/kWh brutto. Woher: Aufschlüsselung auf der Stromrechnung bzw. im Preisblatt Ihres Lieferanten.\n\n**Mehrwertsteuer** – Wozu: Wird auf den Energiepreis des dynamischen Tarifs aufgeschlagen. Eintragen: Prozent, in Deutschland derzeit 19. Woher: Gesetzlicher Satz bzw. Ihre Stromrechnung.\n\n**Aufschlag dynamischer Tarif (netto)** – Wozu: Aufschlag Ihres Anbieters auf den Börsenpreis beim dynamischen Tarif. Eintragen: ct/kWh netto. Woher: Preisblatt oder Vertrag des dynamischen Tarifs.\n\n**Mehr-Grundgebuehr dynamischer Tarif** – Wozu: Zusätzliche Grundgebühr des dynamischen Tarifs gegenüber heute. Eintragen: € pro Jahr; 0, wenn gleich. Woher: Preisblatt oder Vertrag des dynamischen Tarifs.\n\n**Einspeisevergütung** – Wozu: Erlös für eingespeisten Strom; auch der Wert von Überschuss, der im Speicher bleibt statt ins Netz zu gehen. Eintragen: ct/kWh. Woher: Einspeisevertrag, Abrechnung des Netzbetreibers bzw. anzulegender Wert bei Direktvermarktung.",
+              "help_speicher": "**Nutzbare Speicherkapazität (vorhanden)** – Wozu: Kapazität Ihres Speichers, die die Optimierung nutzen darf. Eintragen: kWh, tatsächlich nutzbar, also ohne Reserve und Herstellergrenzen (z. B. 15 kWh brutto × 0,9). Woher: Datenblatt oder App Ihres Speichers.\n\n**Nutzbare Kapazität der Speichererweiterung** – Wozu: Zusätzliche nutzbare Kapazität einer geplanten Erweiterung; wird für die Frage „lohnt sich mehr Speicher?“ gerechnet. Eintragen: kWh nutzbar; 0, wenn keine Erweiterung geplant ist. Woher: Angebot oder Datenblatt der Erweiterung.\n\n**Kosten der Speichererweiterung** – Wozu: Kosten der Erweiterung; daraus wird die Amortisationszeit berechnet. Eintragen: Euro. Woher: Angebot Ihres Installateurs.\n\n**Wirkungsgrad Speicher (Laden und Entladen)** – Wozu: Verluste beim Laden und Entladen zusammen. Eintragen: Prozent (Round-trip), üblich sind etwa 85 bis 92. Woher: Datenblatt des Speichers.\n\n**Speicherleistung (C-Rate)** – Wozu: Wie schnell der Speicher laden und entladen kann, bezogen auf seine Kapazität. Eintragen: 1/h: 0,5 heißt, die Kapazität wird in 2 Stunden geladen oder entladen. Maximalleistung in kW geteilt durch Kapazität in kWh. Woher: Datenblatt des Speichers.\n\n**Verschleißkosten Speicher** – Wozu: Verschleiß des Speichers je geladener oder entladener kWh; hält die Optimierung von unnötigen Zyklen ab. Eintragen: ct/kWh; 0 ist eine gute Annahme, wenn unsicher. Woher: Näherung: Anschaffungspreis ÷ (Zyklen × Kapazität).",
+              "help_anschluss": "**Netzanschluss: maximale Bezugsleistung (0 = unbegrenzt)** – Wozu: Der Speicher darf zusammen mit dem Haushalt nicht mehr aus dem Netz beziehen, als der Anschluss zulässt. Eintragen: kW; 0 = unbegrenzt. Woher: Hauptsicherung (z. B. 3 × 35 A ≈ 24 kW) bzw. Netzanschlussvertrag.\n\n**Netzanschluss: maximale Einspeiseleistung (0 = unbegrenzt)** – Wozu: Der Speicher darf nicht mehr ins Netz einspeisen, als erlaubt ist. Eintragen: kW; 0 = unbegrenzt. Woher: Anlagenregistrierung bzw. Vorgabe des Netzbetreibers (ggf. Einspeisebegrenzung)."
+            }
+          },
+          "netzentgelt": {
+            "name": "Netzentgelt (Preisblatt des Netzbetreibers)",
+            "data": {
+              "st": "Netzentgelt Standardstufe (brutto)",
+              "nt": "Netzentgelt Niedertarif (brutto)",
+              "ht": "Netzentgelt Hochtarif (brutto)",
+              "rebate": "Modul-1-Pauschale",
+              "m3_base_delta": "Zusatz-Grundpreis Modul 3"
+            }
+          },
+          "tarife": {
+            "name": "Strompreis und Tarife",
+            "data": {
+              "fixed": "Arbeitspreis heute (brutto)",
+              "levies": "Umlagen und Steuern (brutto)",
+              "vat": "Mehrwertsteuer",
+              "markup": "Aufschlag dynamischer Tarif (netto)",
+              "dyn_base": "Mehr-Grundgebuehr dynamischer Tarif",
+              "feedin": "Einspeisevergütung"
+            }
+          },
+          "speicher": {
+            "name": "Speicher",
+            "data": {
+              "flex_kwh": "Nutzbare Speicherkapazität (vorhanden)",
+              "extra_kwh": "Nutzbare Kapazität der Speichererweiterung",
+              "invest": "Kosten der Speichererweiterung",
+              "eta_rt": "Wirkungsgrad Speicher (Laden und Entladen)",
+              "c_rate": "Speicherleistung (C-Rate)",
+              "wear": "Verschleißkosten Speicher"
+            }
+          },
+          "anschluss": {
+            "name": "Netzanschluss",
+            "data": {
+              "grid_import_kw": "Netzanschluss: maximale Bezugsleistung (0 = unbegrenzt)",
+              "grid_export_kw": "Netzanschluss: maximale Einspeiseleistung (0 = unbegrenzt)"
+            }
+          }
         }
       }
     },

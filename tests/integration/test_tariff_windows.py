@@ -46,7 +46,13 @@ async def _open(hass: HomeAssistant, entry, step: str) -> dict:
 async def test_menu_lists_current_windows(hass: HomeAssistant, entry):  # AK-13
     await setup_entry(hass, entry)
     menu = await hass.config_entries.options.async_init(entry.entry_id)
-    assert menu["menu_options"] == ["sources", "window_add", "window_edit", "window_delete"]
+    assert menu["menu_options"] == [
+        "inputs",
+        "window_add",
+        "window_edit",
+        "window_delete",
+        "sources",
+    ]
     shown = menu["description_placeholders"]["windows"]
     assert "NT 01.01.2026\u201331.12.2026, 23:00\u201305:00" in shown
     assert shown.count("- ") == 3
@@ -56,7 +62,7 @@ async def test_menu_without_windows_hides_edit_and_delete(hass: HomeAssistant, e
     await setup_entry(hass, entry)
     entry.runtime_data.async_set_windows([])
     menu = await hass.config_entries.options.async_init(entry.entry_id)
-    assert menu["menu_options"] == ["sources", "window_add"]
+    assert menu["menu_options"] == ["inputs", "window_add", "sources"]
     assert menu["description_placeholders"]["windows"] == "\u2013"
 
 

@@ -18,6 +18,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
     DateSelector,
     EntitySelector,
@@ -29,6 +30,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TemplateSelector,
 )
 from homeassistant.util import dt as dt_util
 
@@ -41,6 +43,7 @@ from .const import (
     DEFAULT_IMPORT,
     DEFAULT_PRICE,
     DOMAIN,
+    NUMBER_PARAMS,
 )
 from .hub import Hub
 
@@ -51,6 +54,14 @@ _WINDOW_ERRORS = {
     "hour_range": ("to_hour", "window_hour_range"),
     "hours_equal": ("to_hour", "window_hours_equal"),
     "overlap": ("start_date", "window_overlap"),
+}
+
+# Number inputs of the "inputs" dialog by topic; the help block lists them in the same order (AK-18)
+_INPUT_GROUPS = {
+    "netzentgelt": ("st", "nt", "ht", "rebate", "m3_base_delta"),
+    "tarife": ("fixed", "levies", "vat", "markup", "dyn_base", "feedin"),
+    "speicher": ("flex_kwh", "extra_kwh", "invest", "eta_rt", "c_rate", "wear"),
+    "anschluss": ("grid_import_kw", "grid_export_kw"),
 }
 
 _FIELDS = (
@@ -155,6 +166,35 @@ def _window_schema(defaults: dict[str, Any]) -> vol.Schema:
     )
 
 
+def _inputs_schema(params: dict[str, float]) -> vol.Schema:
+    """Number inputs by topic, preceded by a collapsed block that carries the help texts."""
+
+    def number(key: str) -> NumberSelector:
+        _, unit, low, high, step, _ = NUMBER_PARAMS[key]
+        return NumberSelector(
+            NumberSelectorConfig(
+                min=low,
+                max=high,
+                step=step,
+                unit_of_measurement=unit,
+                mode=NumberSelectorMode.BOX,
+            )
+        )
+
+    # display-only fields: their translated data_description is the help Markdown
+    help_block = section(
+        vol.Schema({vol.Optional(f"help_{g}"): TemplateSelector() for g in _INPUT_GROUPS}),
+        {"collapsed": True},
+    )
+    fields: dict[Any, Any] = {vol.Optional("hilfe"): help_block}
+    for group, keys in _INPUT_GROUPS.items():
+        fields[vol.Required(group)] = section(
+            vol.Schema({vol.Required(k, default=params[k]): number(k) for k in keys}),
+            {"collapsed": False},
+        )
+    return vol.Schema(fields)
+
+
 class NetzentgeltOptionsFlow(OptionsFlowWithReload):
     """Source sensors (reloads the entry) and the list of tariff windows (AK-13, AK-14)."""
 
@@ -167,16 +207,32 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         hub = self._hub
-        menu = ["sources"]
+        menu: list[str] = []
         shown = "\u2013"
         if hub is not None:
-            menu.append("window_add")
+            menu += ["inputs", "window_add"]
             if hub.windows:
                 menu += ["window_edit", "window_delete"]
                 shown = "\n".join(f"- {describe_window(w)}" for w in hub.windows)
+        menu.append("sources")
         return self.async_show_menu(
             step_id="init", menu_options=menu, description_placeholders={"windows": shown}
         )
+
+    async def async_step_inputs(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Edit all number inputs with a collapsed help block (AK-18); no recalculation."""
+        hub = self._hub
+        if hub is None:
+            return await self.async_step_init()
+        if user_input is not None:
+            values = {
+                key: float(value)
+                for group in _INPUT_GROUPS
+                for key, value in user_input[group].items()
+            }  # the help block ("hilfe") is display-only and never stored
+            hub.async_set_params(values)
+            return await self.async_step_init()
+        return self.async_show_form(step_id="inputs", data_schema=_inputs_schema(hub.params))
 
     async def async_step_sources(
         self, user_input: dict[str, Any] | None = None

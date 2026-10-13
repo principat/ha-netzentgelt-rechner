@@ -11,7 +11,10 @@
           "price_entity": "Electricity price history"
         },
         "data_description": {
-          "name": "Unique name of this setup, e.g. the location. It becomes the device name."
+          "name": "Unique name of this setup, e.g. the location. It becomes the device name.",
+          "import_entity": "Sensor with the cumulative grid import in kWh (meter reading, long-term statistics required).",
+          "export_entity": "Sensor with the cumulative grid export in kWh (meter reading, long-term statistics required).",
+          "price_entity": "Sensor with the hourly spot price (day-ahead) in EUR/kWh net, with long-term statistics."
         }
       }
     },
@@ -27,6 +30,7 @@
         "title": "Settings",
         "description": "Current tariff windows (HT = high tariff, NT = low tariff; all other times are the standard stage):\n\n{windows}",
         "menu_options": {
+          "inputs": "Edit inputs",
           "sources": "Change source sensors",
           "window_add": "Add tariff window",
           "window_edit": "Edit tariff window",
@@ -39,6 +43,11 @@
           "import_entity": "Meter reading import",
           "export_entity": "Meter reading export",
           "price_entity": "Electricity price history"
+        },
+        "data_description": {
+          "import_entity": "Sensor with the cumulative grid import in kWh (meter reading, long-term statistics required).",
+          "export_entity": "Sensor with the cumulative grid export in kWh (meter reading, long-term statistics required).",
+          "price_entity": "Sensor with the hourly spot price (day-ahead) in EUR/kWh net, with long-term statistics."
         }
       },
       "window_add": {
@@ -52,6 +61,9 @@
           "to_hour": "End hour"
         },
         "data_description": {
+          "stage": "High tariff (HT) or low tariff (NT) according to your grid operator's price sheet.",
+          "start_date": "First day on which the tariff window applies.",
+          "end_date": "Last day (inclusive) on which the tariff window applies.",
           "from_hour": "Full hour from which the window applies (0–23).",
           "to_hour": "Full hour until which it applies, exclusive (1–24). If smaller than the start hour, the window spans midnight (e.g. 23 to 5)."
         }
@@ -73,6 +85,9 @@
           "to_hour": "End hour"
         },
         "data_description": {
+          "stage": "High tariff (HT) or low tariff (NT) according to your grid operator's price sheet.",
+          "start_date": "First day on which the tariff window applies.",
+          "end_date": "Last day (inclusive) on which the tariff window applies.",
           "from_hour": "Full hour from which the window applies (0–23).",
           "to_hour": "Full hour until which it applies, exclusive (1–24). If smaller than the start hour, the window spans midnight (e.g. 23 to 5)."
         }
@@ -81,6 +96,66 @@
         "title": "Delete tariff windows",
         "data": {
           "windows": "Tariff windows to delete"
+        }
+      },
+      "inputs": {
+        "title": "Edit inputs",
+        "sections": {
+          "hilfe": {
+            "name": "Help for the fields (expand)",
+            "description": "What the field is for, what to enter and where to get the value.",
+            "data": {
+              "help_netzentgelt": "Grid fee (price sheet of the grid operator)",
+              "help_tarife": "Electricity price and tariffs",
+              "help_speicher": "Battery",
+              "help_anschluss": "Grid connection"
+            },
+            "data_description": {
+              "help_netzentgelt": "**Grid fee standard stage (gross)** – Why: Grid fee outside the high and low tariff times; also the base of the dynamic tariff. Enter: ct/kWh gross (incl. VAT). Source: Grid fee price sheet of your grid operator, standard energy price.\n\n**Grid fee low tariff (gross)** – Why: Energy price of the grid fee during the low tariff times of module 3. Enter: ct/kWh gross. Source: Price sheet for time-variable grid fees of your grid operator.\n\n**Grid fee high tariff (gross)** – Why: Energy price of the grid fee during the high tariff times of module 3. Enter: ct/kWh gross. Source: Price sheet for time-variable grid fees of your grid operator.\n\n**Module 1 flat rebate** – Why: Flat reduction of the grid fee for controllable consumers (module 1); a prerequisite for module 3. Enter: EUR per year gross. Source: Price sheet of your grid operator (§14a, module 1) or your notice.\n\n**Extra base price module 3** – Why: Extra yearly cost of module 3 compared to today, e.g. a higher metering fee. Enter: EUR per year; 0 if no extra cost is known. Source: Grid operator or metering point operator.",
+              "help_tarife": "**Current energy price (gross)** – Why: Your current electricity price; the reference all savings are calculated against. Enter: Energy price in ct/kWh gross, all included (energy, grid fee, levies, taxes). Source: Your electricity bill or supply contract.\n\n**Levies and taxes (gross)** – Why: Part of the price that does not depend on the tariff (concession fee, levies, electricity tax). Enter: Sum in ct/kWh gross. Source: Breakdown on your electricity bill or your supplier's price sheet.\n\n**VAT** – Why: Added to the energy price of the dynamic tariff. Enter: Percent, currently 19 in Germany. Source: Legal rate or your electricity bill.\n\n**Dynamic tariff markup (net)** – Why: Surcharge of your supplier on the spot price in the dynamic tariff. Enter: ct/kWh net. Source: Price sheet or contract of the dynamic tariff.\n\n**Extra base fee dynamic tariff** – Why: Additional base fee of the dynamic tariff compared to today. Enter: EUR per year; 0 if equal. Source: Price sheet or contract of the dynamic tariff.\n\n**Feed-in tariff** – Why: Revenue for exported power; also the value of surplus that stays in the battery instead of going to the grid. Enter: ct/kWh. Source: Feed-in contract, statement of the grid operator, or the applicable value under direct marketing.",
+              "help_speicher": "**Usable storage capacity (existing)** – Why: Capacity of your battery that the optimisation may use. Enter: kWh actually usable, i.e. without reserve and manufacturer limits (e.g. 15 kWh gross × 0.9). Source: Data sheet or app of your battery.\n\n**Usable capacity of the storage expansion** – Why: Additional usable capacity of a planned expansion; used to answer whether more storage pays off. Enter: kWh usable; 0 if no expansion is planned. Source: Quote or data sheet of the expansion.\n\n**Cost of storage expansion** – Why: Cost of the expansion; the payback time is derived from it. Enter: Euro. Source: Quote from your installer.\n\n**Storage efficiency (charge and discharge)** – Why: Losses when charging and discharging combined. Enter: Percent (round trip), typically about 85 to 92. Source: Data sheet of the battery.\n\n**Storage power (C-rate)** – Why: How fast the battery can charge and discharge relative to its capacity. Enter: 1/h: 0.5 means the capacity is charged or discharged in 2 hours. Maximum power in kW divided by capacity in kWh. Source: Data sheet of the battery.\n\n**Storage wear cost** – Why: Wear of the battery per kWh charged or discharged; keeps the optimisation from needless cycles. Enter: ct/kWh; 0 is a good assumption when unsure. Source: Estimate: purchase price ÷ (cycles × capacity).",
+              "help_anschluss": "**Grid connection: maximum import power (0 = unlimited)** – Why: The battery together with the household must not draw more from the grid than the connection allows. Enter: kW; 0 = unlimited. Source: Main fuse (e.g. 3 × 35 A ≈ 24 kW) or grid connection contract.\n\n**Grid connection: maximum export power (0 = unlimited)** – Why: The battery must not export more to the grid than allowed. Enter: kW; 0 = unlimited. Source: Plant registration or requirement of the grid operator (possibly an export limit)."
+            }
+          },
+          "netzentgelt": {
+            "name": "Grid fee (price sheet of the grid operator)",
+            "data": {
+              "st": "Grid fee standard stage (gross)",
+              "nt": "Grid fee low tariff (gross)",
+              "ht": "Grid fee high tariff (gross)",
+              "rebate": "Module 1 flat rebate",
+              "m3_base_delta": "Extra base price module 3"
+            }
+          },
+          "tarife": {
+            "name": "Electricity price and tariffs",
+            "data": {
+              "fixed": "Current energy price (gross)",
+              "levies": "Levies and taxes (gross)",
+              "vat": "VAT",
+              "markup": "Dynamic tariff markup (net)",
+              "dyn_base": "Extra base fee dynamic tariff",
+              "feedin": "Feed-in tariff"
+            }
+          },
+          "speicher": {
+            "name": "Battery",
+            "data": {
+              "flex_kwh": "Usable storage capacity (existing)",
+              "extra_kwh": "Usable capacity of the storage expansion",
+              "invest": "Cost of storage expansion",
+              "eta_rt": "Storage efficiency (charge and discharge)",
+              "c_rate": "Storage power (C-rate)",
+              "wear": "Storage wear cost"
+            }
+          },
+          "anschluss": {
+            "name": "Grid connection",
+            "data": {
+              "grid_import_kw": "Grid connection: maximum import power (0 = unlimited)",
+              "grid_export_kw": "Grid connection: maximum export power (0 = unlimited)"
+            }
+          }
         }
       }
     },
