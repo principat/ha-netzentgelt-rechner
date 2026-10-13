@@ -244,8 +244,8 @@
   "selector": {
     "stage": {
       "options": {
-        "N": "Niedertarif (NT)",
-        "H": "Hochtarif (HT)"
+        "nt": "Niedertarif (NT)",
+        "ht": "Hochtarif (HT)"
       }
     }
   }

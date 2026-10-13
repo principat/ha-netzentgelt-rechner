@@ -244,8 +244,8 @@
   "selector": {
     "stage": {
       "options": {
-        "N": "Low tariff (NT)",
-        "H": "High tariff (HT)"
+        "nt": "Low tariff (NT)",
+        "ht": "High tariff (HT)"
       }
     }
   }

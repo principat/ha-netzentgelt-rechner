@@ -95,3 +95,13 @@ def test_sources_and_window_fields_have_descriptions(name):  # AK-18
     for step in ("window_add", "window_edit_form"):
         for field in ("stage", "start_date", "end_date", "from_hour", "to_hour"):
             assert texts[f"options.step.{step}.data_description.{field}"], (name, step, field)
+
+
+KEY_RE = re.compile(r"^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$")
+
+
+@pytest.mark.parametrize("name", FILES)
+def test_translation_keys_are_valid_for_hassfest(name):  # AK-12
+    for path in _flatten(_load(name)):
+        for part in path.split("."):
+            assert KEY_RE.match(part), (name, path)

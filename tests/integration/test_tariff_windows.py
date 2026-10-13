@@ -25,7 +25,7 @@ def _frozen(freezer) -> None:
     freezer.move_to(NOW)
 
 
-def _form(stage="H", start="2026-01-01", end="2026-12-31", from_hour=17, to_hour=19):
+def _form(stage="ht", start="2026-01-01", end="2026-12-31", from_hour=17, to_hour=19):
     return {
         "stage": stage,
         "start_date": start,
@@ -84,7 +84,7 @@ async def test_add_window_applies_immediately_without_recalculation(hass, entry)
     result = await _open(hass, entry, "window_add")
     assert result["type"] is FlowResultType.FORM
     done = await hass.config_entries.options.async_configure(
-        result["flow_id"], _form("H", "2026-10-01", "2026-10-31", 12, 14)
+        result["flow_id"], _form("ht", "2026-10-01", "2026-10-31", 12, 14)
     )
     assert done["type"] is FlowResultType.MENU  # back to the list
     assert hub.windows == [TariffWindow("H", date(2026, 10, 1), date(2026, 10, 31), 12, 14)]
@@ -100,7 +100,7 @@ async def test_add_window_over_midnight(hass, entry):  # AK-15
     hub.async_set_windows([])
     result = await _open(hass, entry, "window_add")
     await hass.config_entries.options.async_configure(
-        result["flow_id"], _form("N", "2026-01-01", "2026-12-31", 22, 6)
+        result["flow_id"], _form("nt", "2026-01-01", "2026-12-31", 22, 6)
     )
     assert day_stages(hub.windows, date(2026, 5, 5)) == "N" * 6 + "S" * 16 + "N" * 2
 
@@ -139,7 +139,7 @@ async def test_overlapping_window_is_rejected_with_conflict(hass, entry):  # AK-
     result = await _open(hass, entry, "window_add")
     bad = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        _form("N", "2026-06-01", "2026-06-30", 18, 20),  # clashes with HT 17-19
+        _form("nt", "2026-06-01", "2026-06-30", 18, 20),  # clashes with HT 17-19
     )
     assert bad["errors"] == {"start_date": "window_overlap"}
     assert (
@@ -161,10 +161,10 @@ async def test_edit_window_prefills_and_saves_sorted(hass, entry):  # AK-13
     assert form["step_id"] == "window_edit_form"
     schema_defaults = {k.schema: k.default() for k in form["data_schema"].schema}
     assert schema_defaults["from_hour"] == 17 and schema_defaults["to_hour"] == 19
-    assert schema_defaults["stage"] == "H"
+    assert schema_defaults["stage"] == "ht"
     # keeping the same window is no self-overlap
     done = await hass.config_entries.options.async_configure(
-        form["flow_id"], _form("H", "2026-01-01", "2026-12-31", 16, 19)
+        form["flow_id"], _form("ht", "2026-01-01", "2026-12-31", 16, 19)
     )
     assert done["type"] is FlowResultType.MENU
     assert len(hub.windows) == 3
@@ -182,7 +182,7 @@ async def test_edit_window_conflict_is_reported_for_the_edited_window(hass, entr
     )
     bad = await hass.config_entries.options.async_configure(
         form["flow_id"],
-        _form("H", "2026-01-01", "2026-12-31", 12, 19),  # reaches into HT 11-13
+        _form("ht", "2026-01-01", "2026-12-31", 12, 19),  # reaches into HT 11-13
     )
     assert bad["errors"] == {"start_date": "window_overlap"}
     assert "11:00\u201313:00" in bad["description_placeholders"]["conflict"]

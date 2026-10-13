@@ -61,6 +61,10 @@ _INPUT_GROUPS = {
     "anschluss": ("grid_import_kw", "grid_export_kw"),
 }
 
+# stage <-> selector option (translation keys must be lowercase, hassfest)
+_STAGE_OPTION = {"N": "nt", "H": "ht"}
+_OPTION_STAGE = {v: k for k, v in _STAGE_OPTION.items()}
+
 _FIELDS = (CONF_IMPORT, CONF_EXPORT, CONF_PRICE)
 
 
@@ -141,9 +145,9 @@ def _window_schema(defaults: dict[str, Any]) -> vol.Schema:
     year = dt_util.now().year
     return vol.Schema(
         {
-            vol.Required("stage", default=defaults.get("stage", "H")): SelectSelector(
+            vol.Required("stage", default=defaults.get("stage", "ht")): SelectSelector(
                 SelectSelectorConfig(
-                    options=["N", "H"],
+                    options=list(_OPTION_STAGE),
                     mode=SelectSelectorMode.LIST,
                     translation_key="stage",
                 )
@@ -315,7 +319,7 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
         if user_input is None and index is not None:
             w = hub.windows[index]
             defaults = {
-                "stage": w.stage,
+                "stage": _STAGE_OPTION[w.stage],
                 "start_date": w.start.isoformat(),
                 "end_date": w.end.isoformat(),
                 "from_hour": w.from_hour,
@@ -323,7 +327,7 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
             }
         if user_input is not None:
             window = calc.TariffWindow(
-                user_input["stage"],
+                _OPTION_STAGE.get(user_input["stage"], user_input["stage"]),
                 date.fromisoformat(user_input["start_date"]),
                 date.fromisoformat(user_input["end_date"]),
                 int(user_input["from_hour"]),

@@ -102,7 +102,7 @@ def test_e2e_2_change_input(ha: HA, ids: dict[str, str]):  # AK-2
     before = ha.state(ids["wirtschaftlichkeit"])
     ha.call("number", "set_value", entity_id=ids["rebate"], value=300)
     ha.call("number", "set_value", entity_id=ids["nt"], value=2.5)
-    add_window(ha, "N", "2026-01-01", "2026-12-31", 0, 24)  # AK-13, via the options dialog
+    add_window(ha, "nt", "2026-01-01", "2026-12-31", 0, 24)  # AK-13, via the options dialog
     fee = ha.state(ids["netzentgelt"])
     assert fee["attributes"]["preise"]["nt"] == 2.5
     assert any(
