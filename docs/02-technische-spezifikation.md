@@ -73,7 +73,7 @@ heute ignoriert sie `quarter`. Quartalspreise später = neue Number-Entitäten `
 
 ### 3.4 Persistenz
 `homeassistant.helpers.storage.Store`, Schlüssel `netzentgelt_rechner.<entry_id>`, Version 1:
-`{"params": {...}, "windows": [...], "results": {...}|null, "status": "...", "error": null}`.
+`{"params": {...}, "windows": [...], "ui": {"help_expanded": false}, "results": {...}|null, "status": "...", "error": null}`.
 Verzögertes Speichern (`async_delay_save`, 5 s) bei Parameteränderung, sofortiges nach Berechnung.
 `windows` ist eine Liste von `{stufe, von, bis, stunde_von, stunde_bis}` (ISO-Daten). Ein `windows`-Dict
 (Quartals-Zeitfenster aus v1.0.0) wird beim Laden mit `windows_from_quarters(…, aktuelles Jahr)` umgewandelt.
@@ -242,7 +242,9 @@ Regeln:
   Ändert sich ein Sensor, werden die Entry-Optionen geschrieben (`async_create_entry` → Neuladen) und die Zahlen vorher
   gesetzt; sonst nur `hub.async_set_params` und zurück ins Menü (kein Neuladen). Die Gruppe `hilfe` enthält ein einziges reines Anzeigefeld `help` (`BooleanSelector`, optional,
   nie gespeichert), dessen `data_description` den Markdown-Hilfetext trägt: je Thema eine Überschrift (`### …`) und je Feld
-  `**<Feldname>** – Wozu: … Eintragen: … Woher: …`; Schlüssel `options.step.<thema>.sections.hilfe.data_description.help`
+  `**<Feldname>** – Wozu: … Eintragen: … Woher: …`. Der Schalter selbst ist die Einstellung „Hilfe beim nächsten Öffnen
+  aufgeklappt anzeigen“ (AK-23): Vorgabe = `hub.help_expanded`, die Gruppe ist `collapsed = not hub.help_expanded`; beim
+  Speichern `hub.async_set_help_expanded(...)` (Store-Schlüssel `ui.help_expanded`, keine Entität, kein Signal). Schlüssel `options.step.<thema>.sections.hilfe.data_description.help`
   (Felder: `options.step.<thema>.data.<feld>`). Geprüft im echten Frontend (Screenshots, `tests/e2e/test_ui.py`): ein
   `TemplateSelector` zeigt je Feld eine Editor-Box, ein `ConstantSelector` zeigt keinen Helper-Text, und
   Abschnitts-Beschreibungen verlieren Zeilenumbrüche – nur der `BooleanSelector` zeigt Label und Markdown sauber.

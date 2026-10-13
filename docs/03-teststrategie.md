@@ -39,7 +39,8 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 - **Persistenz (AK-10):** Store füllen, Config-Entry neu laden, Ergebnisse und Status unverändert.
 - **Config Flow (AK-11):** nicht vorhandene Entität abgelehnt; Options Flow ändert Quellen; mehrere Instanzen (Name Pflicht/eindeutig, AK-20).
 - **Themen-Formulare (AK-18, AK-22):** Menüeinträge `netzentgelt`/`tarife`/`speicher`/`anschluss`; je Formular `hilfe`
-  eingeklappt; Sensorwechsel lädt neu, Zahlen nicht; Migration `c_rate` → kW mit identischem Golden-Ergebnis; Speichern ändert
+  eingeklappt; Sensorwechsel lädt neu, Zahlen nicht; Migration `c_rate` → kW mit identischem Golden-Ergebnis; Hilfe-Schalter wirkt in allen Themen und
+  bleibt gespeichert (AK-23); Speichern ändert
   Parameter und Sensor sofort ohne Neuberechnung und speichert keine Anzeigefelder; Übersetzungstest: jedes
   `NUMBER_PARAMS`-Feld hat in `de`/`en` genau ein Feldlabel und einen Hilfeeintrag (`**Label**`), Quellsensoren und
   Tarifzeiten-Felder haben `data_description`.

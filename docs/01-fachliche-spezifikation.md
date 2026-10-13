@@ -194,6 +194,9 @@ müssen; der geübte Nutzer soll nicht gestört werden und keinen Platz verliere
   Einspeisezähler gehören zu „Netzanschluss“; einen eigenen Eintrag „Quellsensoren“ gibt es nicht mehr.
 - Jedes Thema öffnet ein Formular mit seinen Feldern; ganz oben steht ein **eingeklappter Hilfeblock** („Hilfe zu
   den Feldern“) mit Wozu/Was/Woher je Feld dieses Themas (auch für die Sensoren); die Felder bleiben kompakt.
+- Im Hilfeblock steht der Schalter **„Hilfe beim nächsten Öffnen aufgeklappt anzeigen“** (in allen Themen derselbe,
+  eine gemeinsame Einstellung je Instanz, Standard: aus). Ist er an, öffnen alle Themen den Hilfeblock aufgeklappt.
+  Die Einstellung wird mit „OK“ übernommen, übersteht Neustarts, ist keine Entität und löst keine Neuberechnung aus.
 - Die Tarifzeiten (§7) und die Sensoren haben zusätzlich eine kurze Beschreibung direkt am Feld.
 - Die Zahlen-Entitäten bleiben für schnelles Ändern im Dashboard bestehen (für geübte Nutzer); beide Wege
   ändern dieselben Werte. Home Assistant bietet an Entitäten keine Feldhilfe und in Formularen keine
@@ -288,6 +291,9 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
 - **AK-22** Statt der C-Rate werden **Lade-/Entladeleistungen in kW** eingegeben (vorhanden und zusätzlich durch die
   Erweiterung). Gespeicherte Werte aus Version ≤ 1.1 werden umgerechnet (`power_kw = c_rate × flex_kwh`,
   `extra_power_kw = c_rate × extra_kwh`), sodass die Ergebnisse identisch bleiben; die alte Entität „C-Rate“ verschwindet.
+- **AK-23** Der Schalter „Hilfe beim nächsten Öffnen aufgeklappt anzeigen“ wirkt in allen Themen gleich: eingeschaltet
+  und mit „OK“ bestätigt, öffnet jedes Thema den Hilfeblock aufgeklappt, ausgeschaltet eingeklappt; die Einstellung
+  übersteht einen Neustart und ist keine Entität.
 - **AK-12** Deutsche Oberfläche; alle Texte übersetzbar (`translations/de.json`, `en.json`).
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)
