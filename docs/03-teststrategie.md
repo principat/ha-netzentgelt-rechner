@@ -38,7 +38,8 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 - **Zeitplan (AK-9):** `async_fire_time_changed` auf 1. des Monats 03:30; Verzögerungsstart nur ohne Ergebnis.
 - **Persistenz (AK-10):** Store füllen, Config-Entry neu laden, Ergebnisse und Status unverändert.
 - **Config Flow (AK-11):** nicht vorhandene Entität abgelehnt; Options Flow ändert Quellen; mehrere Instanzen (Name Pflicht/eindeutig, AK-20).
-- **Eingaben-Dialog (AK-18):** Menüeintrag `inputs`; Formular hat die Gruppen mit `hilfe` eingeklappt; Speichern ändert
+- **Themen-Formulare (AK-18, AK-22):** Menüeinträge `netzentgelt`/`tarife`/`speicher`/`anschluss`; je Formular `hilfe`
+  eingeklappt; Sensorwechsel lädt neu, Zahlen nicht; Migration `c_rate` → kW mit identischem Golden-Ergebnis; Speichern ändert
   Parameter und Sensor sofort ohne Neuberechnung und speichert keine Anzeigefelder; Übersetzungstest: jedes
   `NUMBER_PARAMS`-Feld hat in `de`/`en` genau ein Feldlabel und einen Hilfeeintrag (`**Label**`), Quellsensoren und
   Tarifzeiten-Felder haben `data_description`.

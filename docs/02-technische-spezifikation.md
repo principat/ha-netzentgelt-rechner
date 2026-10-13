@@ -39,7 +39,7 @@ custom_components/netzentgelt_rechner/
   data.py            Recorder-Zugriff (Statistiken laden, _ts-Normalisierung, Zeitraum)
   entity.py          Basisklasse der Entitäten (Gerät, Dispatcher)
   diagnostics.py     Diagnostics-Platform
-  config_flow.py     ConfigFlow + OptionsFlow (Quellsensoren, Tarifzeiten-Liste)
+  config_flow.py     ConfigFlow + OptionsFlow (Themen-Formulare inkl. Sensoren, Tarifzeiten-Liste)
   sensor.py          NetzentgeltSensor, WirtschaftlichkeitSensor
   number.py  button.py
   const.py  manifest.json  strings/translations (de.json, en.json)  icons.json
@@ -209,7 +209,11 @@ Regeln:
   Begrenzung (Wert 0) entsteht keine `inf`-Zelle, das Ergebnis ist bit-identisch zu vorher. Wegen des Füllstandsrasters
   (1 kWh) werden Teilschritte unterhalb des Rasters nicht gerechnet: bleibt weniger Spielraum als ein Schritt, wird
   in dieser Stunde nicht geladen/entladen (konservativ).
-- `η = √eta_rt`; `kc = max(1, int(c_rate·cap·η/q))`, `kd = max(1, int(c_rate·cap/(η·q)))`.
+- `η = √eta_rt`; Leistung `P = power_kw` (bzw. `power_kw + extra_power_kw` für `flex_kwh + extra_kwh`, Aufruf
+  `dp_day(…, cap, p, power_kw=P)`); `kc = max(1, int(P·η/q))`, `kd = max(1, int(P/(η·q)))`.
+- **Migration (AK-22):** Beim Laden des Stores wird ein gespeichertes `c_rate` ohne `power_kw` umgerechnet:
+  `power_kw = c_rate·flex_kwh`, `extra_power_kw = c_rate·extra_kwh` (jeweils gespeicherte oder Standardwerte); `c_rate`
+  entfällt. Die Entität `number.*_c_rate` wird beim Setup aus der Registry entfernt.
 - `fi = feedin` falls `spot ≥ 0`, sonst 0.
 - Tage mit `Σimp ≤ 0.5` überspringen. Skalierung `365/Anzahl_Tage`.
 - **Bekannte Eigenschaft**: Ergebnis hängt nur über `imp/exp` vom vorhandenen System ab; kein
@@ -223,19 +227,23 @@ Regeln:
   Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
   (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).
 - OptionsFlow (`OptionsFlowWithReload`): Menü-Schritt `init` mit der aktuellen Tarifzeiten-Liste im Text
-  (`description_placeholders`) und den Einträgen `inputs` (siehe unten), `sources` (die drei Felder; Änderung → Entry neu laden),
+  (`description_placeholders` `windows` je Zeile `… : <Preis> ct/kWh`, `standard` = Preis der Standardstufe; Zahl im
+  Format der HA-Sprache) und den Einträgen `netzentgelt`, `tarife`, `speicher`, `anschluss` (Themen, siehe unten),
   `window_add`, `window_edit` (Auswahl → Formular), `window_delete` (Mehrfachauswahl). Formular: `stage`
   (`SelectSelector` N/H), `start_date`, `end_date` (`DateSelector`), `from_hour` (0–23), `to_hour` (1–24)
   (`NumberSelector`, Box, Schritt 1). Fehler (`WindowError`) → Fehlerschlüssel `window_<code>` am Feld
   (`end_date`, `to_hour`, `from_hour`, bei `overlap` am `start_date` mit Platzhalter `{conflict}`).
   Gespeichert wird über `hub.async_set_windows(...)` (Store, Signal, keine Neuberechnung); die Optionen des
   Entries bleiben unverändert, es folgt kein Neuladen. Listenbeschriftung: `NT|HT · TT.MM.JJJJ–TT.MM.JJJJ · HH–HH Uhr`.
-- **`inputs` (AK-18):** Formular mit `section`-Gruppen `hilfe` (**eingeklappt**, `{"collapsed": True}`), `netzentgelt`, `tarife`,
-  `speicher`, `anschluss`; die Felder sind `NumberSelector` (Min/Max/Schritt/Einheit aus `NUMBER_PARAMS`, Box) mit
-  aktuellem Wert als Vorgabe. Die Gruppe `hilfe` enthält ein einziges reines Anzeigefeld `help` (`BooleanSelector`, optional,
+- **Themen-Formulare (AK-18):** je Thema ein Schritt (`netzentgelt`, `tarife`, `speicher`, `anschluss`) mit einer
+  `section` `hilfe` (**eingeklappt**, `{"collapsed": True}`) und darunter den Feldern des Themas: `NumberSelector`
+  (Min/Max/Schritt/Einheit aus `NUMBER_PARAMS`, Box, aktueller Wert als Vorgabe); `tarife` zusätzlich `price_entity`,
+  `anschluss` zusätzlich `import_entity`, `export_entity` (`EntitySelector`, aktueller Wert, Prüfung wie AK-11).
+  Ändert sich ein Sensor, werden die Entry-Optionen geschrieben (`async_create_entry` → Neuladen) und die Zahlen vorher
+  gesetzt; sonst nur `hub.async_set_params` und zurück ins Menü (kein Neuladen). Die Gruppe `hilfe` enthält ein einziges reines Anzeigefeld `help` (`BooleanSelector`, optional,
   nie gespeichert), dessen `data_description` den Markdown-Hilfetext trägt: je Thema eine Überschrift (`### …`) und je Feld
-  `**<Feldname>** – Wozu: … Eintragen: … Woher: …`; Schlüssel `options.step.inputs.sections.hilfe.data_description.help`
-  (Felder: `….sections.<gruppe>.data.<feld>`). Geprüft im echten Frontend (Screenshots, `tests/e2e/test_ui.py`): ein
+  `**<Feldname>** – Wozu: … Eintragen: … Woher: …`; Schlüssel `options.step.<thema>.sections.hilfe.data_description.help`
+  (Felder: `options.step.<thema>.data.<feld>`). Geprüft im echten Frontend (Screenshots, `tests/e2e/test_ui.py`): ein
   `TemplateSelector` zeigt je Feld eine Editor-Box, ein `ConstantSelector` zeigt keinen Helper-Text, und
   Abschnitts-Beschreibungen verlieren Zeilenumbrüche – nur der `BooleanSelector` zeigt Label und Markdown sauber.
   Speichern über `hub.async_set_params(values)`: prüft alle Bereiche, setzt alle Werte atomar, speichert verzögert,

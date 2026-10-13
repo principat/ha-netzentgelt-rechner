@@ -93,7 +93,8 @@ Bezugs-/Einspeiseprofil des Tages als Rest nach dem vorhandenen System:
    aus dem Netz (Kosten = Bezugspreis der Stunde). **Entladen** ersetzt zuerst Netzbezug; Rest geht
    ins Netz (Vergütung der Stunde).
 3. Wirkungsgrad `eta_rt` (Laden × Entladen), je Richtung `√eta_rt`.
-4. Leistung ≤ `c_rate · Kapazität` je Stunde; Füllstandsraster 1 kWh; Verschleißkosten je kWh Durchsatz.
+4. Lade- und Entladeleistung je Stunde ≤ `power_kw` (vorhandener Speicher) bzw. `power_kw + extra_power_kw`
+   (mit Erweiterung), jeweils in kW = kWh je Stunde; Füllstandsraster 1 kWh; Verschleißkosten je kWh Durchsatz.
 4a. **Netzanschluss:** Zusätzlich begrenzt die Leistung des Netzanschlusses den Speicher. In jeder Stunde
    darf der Bezug (gemessener Bezug des Haushalts **plus** Laden des Speichers aus dem Netz) höchstens
    `grid_import_kw · 1 h` betragen, die Einspeisung (gemessene Einspeisung **plus** Entladen ins Netz,
@@ -132,7 +133,8 @@ Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein E
   betroffenen Feld abgelehnt und nicht gespeichert. Gleiche Stunden an verschiedenen Tagen (disjunkte
   Datumsbereiche) und angrenzende Stunden (z. B. 11–13 und 13–15) sind kein Konflikt.
 - **Eingabe:** im Optionsdialog der Integration als Liste: Eintrag hinzufügen, bearbeiten, löschen. Der
-  Dialog zeigt die aktuelle Liste. Intern wird bei Bedarf eine vollständige Zeittabelle (Datum × Stunde →
+  Dialog zeigt die aktuelle Liste **mit dem jeweiligen Netzentgelt** (z. B. „NT 01.01.2026–31.12.2026,
+  23:00–05:00: 4,41 ct/kWh“) und den Preis der Standardstufe für alle übrigen Zeiten. Intern wird bei Bedarf eine vollständige Zeittabelle (Datum × Stunde →
   Stufe) aufgebaut; der Nutzer sieht sie nie.
 - **Standard:** beim ersten Einrichten steht eine Beispielliste für das laufende Kalenderjahr
   (01.01.–31.12.): NT 23–5 Uhr, HT 11–13 Uhr, HT 17–19 Uhr – **Annahme**, vom Nutzer anzupassen.
@@ -169,7 +171,8 @@ Zeiten, die in keiner Tarifzeit liegen, gelten als **Standardstufe** (ST). Ein E
 | eta_rt | Wirkungsgrad Speicher | % | 88 | Annahme |
 | flex_kwh | Nutzbare Speicherkapazität (vorhanden) | kWh | 13,5 | Beispiel: 15 kWh × 0,9 nutzbar |
 | extra_kwh | Nutzbare Kapazität der Speichererweiterung | kWh | 14,4 | Beispiel: 16 kWh × 0,9 nutzbar |
-| c_rate | Leistung | 1/h | 0,5 | Annahme |
+| power_kw | Lade-/Entladeleistung des vorhandenen Speichers | kW | 6,75 | Beispiel (13,5 kWh × 0,5) |
+| extra_power_kw | Zusätzliche Lade-/Entladeleistung durch die Erweiterung | kW | 7,2 | Beispiel; 0, wenn die Erweiterung am selben Wechselrichter hängt |
 | grid_import_kw | Netzanschluss: maximale Bezugsleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Hauptsicherung, Anschlussvertrag) |
 | grid_export_kw | Netzanschluss: maximale Einspeiseleistung | kW | 0 (unbegrenzt) | Nutzerangabe (Netzbetreiber, ggf. Einspeisebegrenzung) |
 | wear | Verschleiß | ct/kWh | 0 | Annahme |
@@ -185,10 +188,13 @@ ist (Einheit, brutto/netto, Beispiel), (3) **woher** der Wert kommt (z. B. Preis
 Stromrechnung, Datenblatt des Speichers, Vertrag). Der Laie soll dafür nie in einer Doku oder README nachschlagen
 müssen; der geübte Nutzer soll nicht gestört werden und keinen Platz verlieren:
 
-- Die Zahleneingaben (§8) lassen sich im Optionsdialog unter **„Eingaben bearbeiten“** pflegen, gegliedert nach
-  Themen (Netzentgelt, Strompreis und Tarife, Speicher, Netzanschluss). Ganz oben steht ein **eingeklappter
-  Hilfeblock** („Hilfe zu den Feldern“) mit Wozu/Was/Woher je Feld; die Felder selbst bleiben kompakt.
-- Die Tarifzeiten (§7) und die Quellsensoren haben eine kurze Beschreibung direkt am Feld.
+- Der Optionsdialog zeigt die Themen direkt als **eigene Menüeinträge**: **Netzentgelt**, **Strompreis und
+  Tarife**, **Speicher**, **Netzanschluss** (dazu die Einträge für die Tarifzeiten). Die Quellsensoren sind dem
+  passenden Thema zugeordnet: der Börsenpreis-Sensor gehört zu „Strompreis und Tarife“, Bezugs- und
+  Einspeisezähler gehören zu „Netzanschluss“; einen eigenen Eintrag „Quellsensoren“ gibt es nicht mehr.
+- Jedes Thema öffnet ein Formular mit seinen Feldern; ganz oben steht ein **eingeklappter Hilfeblock** („Hilfe zu
+  den Feldern“) mit Wozu/Was/Woher je Feld dieses Themas (auch für die Sensoren); die Felder bleiben kompakt.
+- Die Tarifzeiten (§7) und die Sensoren haben zusätzlich eine kurze Beschreibung direkt am Feld.
 - Die Zahlen-Entitäten bleiben für schnelles Ändern im Dashboard bestehen (für geübte Nutzer); beide Wege
   ändern dieselben Werte. Home Assistant bietet an Entitäten keine Feldhilfe und in Formularen keine
   aufklappbaren Hilfe-Symbole je Feld; deshalb der eingeklappte Block.
@@ -266,8 +272,9 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
 - **AK-17** Gespeicherte Quartals-Zeitfenster aus Version 1.0.0 werden verlustfrei in Tarifzeiten
   umgewandelt; veraltete Zeitfenster-Entitäten werden entfernt.
 - **AK-18** Zu jedem Eingabefeld gibt es eine Detailhilfe mit Zweck, einzutragendem Wert und Bezugsquelle in Deutsch
-  und Englisch: im Dialog „Eingaben bearbeiten“ je Zahlenfeld (§8) in einem eingeklappten Hilfeblock, an Tarifzeiten
-  und Quellsensoren als Feldbeschreibung. Der Dialog speichert die Werte wie die Zahlen-Entitäten (kein Neurechnen,
+  und Englisch: je Thema (Netzentgelt, Strompreis und Tarife, Speicher, Netzanschluss) in einem eingeklappten
+  Hilfeblock für alle Felder dieses Themas inkl. der zugeordneten Sensoren, an Tarifzeiten und Sensoren zusätzlich als
+  Feldbeschreibung. Ändert ein Thema einen Sensor, wird die Instanz neu geladen; reine Zahlenänderungen nicht. Der Dialog speichert die Werte wie die Zahlen-Entitäten (kein Neurechnen,
   der Netzentgelt-Sensor aktualisiert sofort); Test: kein Zahlenfeld ohne Hilfetext in beiden Sprachen.
 - **AK-19** Mit `grid_import_kw = grid_export_kw = 0` sind alle Ergebnisse identisch zu denen ohne
   Netzanschlussbegrenzung (Golden-Test); mit Begrenzung hält jeder optimierte Tag in jeder Stunde Bezug und
@@ -278,6 +285,9 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
   einer Instanz lassen die andere unverändert (inkl. Neustart).
 - **AK-21** Berechnungen verschiedener Instanzen laufen nie gleichzeitig; eine wartende Instanz hat Status
   `rechnet` und rechnet danach genau einmal (AK-6 gilt je Instanz weiter).
+- **AK-22** Statt der C-Rate werden **Lade-/Entladeleistungen in kW** eingegeben (vorhanden und zusätzlich durch die
+  Erweiterung). Gespeicherte Werte aus Version ≤ 1.1 werden umgerechnet (`power_kw = c_rate × flex_kwh`,
+  `extra_power_kw = c_rate × extra_kwh`), sodass die Ergebnisse identisch bleiben; die alte Entität „C-Rate“ verschwindet.
 - **AK-12** Deutsche Oberfläche; alle Texte übersetzbar (`translations/de.json`, `en.json`).
 
 ## 12 Offene Fragen (vor/bei Umsetzung klären)
