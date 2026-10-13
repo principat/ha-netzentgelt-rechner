@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/principat/ha-netzentgelt-rechner/compare/v1.1.0...v1.1.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* use lowercase translation keys for the stage selector ([b2f43b5](https://github.com/principat/ha-netzentgelt-rechner/commit/b2f43b5c7c4d93615cdf44fc2acf19e8a1a987ef))
+
 # [1.1.0](https://github.com/principat/ha-netzentgelt-rechner/compare/v1.0.0...v1.1.0) (2026-10-13)
 
 
