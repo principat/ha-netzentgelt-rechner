@@ -56,6 +56,12 @@ You can set the integration up **several times** (e.g. to compare different base
 instance its own name, it becomes the device name and part of the entity IDs. Calculations of all instances run one
 after another.
 
+### Screenshots
+
+| Edit inputs (help collapsed) | Help block expanded |
+|---|---|
+| ![Edit inputs](docs/screenshots/02-inputs-collapsed-en.png) | ![Help expanded](docs/screenshots/03-inputs-help-open-en.png) |
+
 License: MIT. Dashboard example: [`examples/en/dashboard.yaml`](examples/en/dashboard.yaml).
 
 ## Development
@@ -120,6 +126,12 @@ und im Optionsdialog ein:
 Die Integration lässt sich **mehrfach einrichten** (z. B. um verschiedene Basisdaten oder Standorte gegenüberzustellen);
 jede Instanz bekommt einen eigenen Namen, der zum Gerätenamen und Teil der Entitäts-IDs wird. Die Berechnungen aller
 Instanzen laufen nacheinander.
+
+#### Bildschirmfotos
+
+| Eingaben bearbeiten (Hilfe eingeklappt) | Hilfeblock aufgeklappt | Tarifzeit-Konflikt |
+|---|---|---|
+| ![Eingaben](docs/screenshots/02-inputs-collapsed-de.png) | ![Hilfe](docs/screenshots/03-inputs-help-open-de.png) | ![Konflikt](docs/screenshots/06-window-overlap-error-de.png) |
 
 Lizenz: MIT. Dashboard-Beispiel: [`examples/de/dashboard.yaml`](examples/de/dashboard.yaml).
 
