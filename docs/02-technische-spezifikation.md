@@ -223,13 +223,20 @@ Regeln:
   Validierung: Entität existiert im Zustandsautomaten **oder** in der Statistik-Metadatentabelle
   (`async_list_statistic_ids`) → sonst Fehler `entity_not_found` (AK-11).
 - OptionsFlow (`OptionsFlowWithReload`): Menü-Schritt `init` mit der aktuellen Tarifzeiten-Liste im Text
-  (`description_placeholders`) und den Einträgen `sources` (die drei Felder; Änderung → Entry neu laden),
+  (`description_placeholders`) und den Einträgen `inputs` (siehe unten), `sources` (die drei Felder; Änderung → Entry neu laden),
   `window_add`, `window_edit` (Auswahl → Formular), `window_delete` (Mehrfachauswahl). Formular: `stage`
   (`SelectSelector` N/H), `start_date`, `end_date` (`DateSelector`), `from_hour` (0–23), `to_hour` (1–24)
   (`NumberSelector`, Box, Schritt 1). Fehler (`WindowError`) → Fehlerschlüssel `window_<code>` am Feld
   (`end_date`, `to_hour`, `from_hour`, bei `overlap` am `start_date` mit Platzhalter `{conflict}`).
   Gespeichert wird über `hub.async_set_windows(...)` (Store, Signal, keine Neuberechnung); die Optionen des
   Entries bleiben unverändert, es folgt kein Neuladen. Listenbeschriftung: `NT|HT · TT.MM.JJJJ–TT.MM.JJJJ · HH–HH Uhr`.
+- **`inputs` (AK-18):** Formular mit `section`-Gruppen `hilfe` (**eingeklappt**, `{"collapsed": True}`), `netzentgelt`, `tarife`,
+  `speicher`, `anschluss`; die Felder sind `NumberSelector` (Min/Max/Schritt/Einheit aus `NUMBER_PARAMS`, Box) mit
+  aktuellem Wert als Vorgabe. Die Gruppe `hilfe` enthält je Thema ein reines Anzeigefeld (`TemplateSelector`,
+  optional, nie gespeichert), dessen `data_description` Markdown mit Wozu/Was/Woher je Feld trägt
+  (`**<Feldname>** – …`); Übersetzungsschlüssel `options.step.inputs.sections.<gruppe>.data[_description].<feld>`.
+  Speichern über `hub.async_set_params(values)`: prüft alle Bereiche, setzt alle Werte atomar, speichert verzögert,
+  feuert das Signal, **keine** Neuberechnung (wie `async_set_param`); danach zurück ins Menü.
 - Beim Setup werden veraltete Entitäten `text.*zeitfenster_q1…q4` aus der Entity-Registry entfernt (AK-17).
 - Alle Texte in `translations/{de,en}.json`; Standard Deutsch.
 

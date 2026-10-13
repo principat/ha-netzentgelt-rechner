@@ -38,6 +38,10 @@ automatisierten Test belegt. Tests referenzieren das AK im Kommentar (`# AK-4`).
 - **Zeitplan (AK-9):** `async_fire_time_changed` auf 1. des Monats 03:30; Verzögerungsstart nur ohne Ergebnis.
 - **Persistenz (AK-10):** Store füllen, Config-Entry neu laden, Ergebnisse und Status unverändert.
 - **Config Flow (AK-11):** nicht vorhandene Entität abgelehnt; Options Flow ändert Quellen; mehrere Instanzen (Name Pflicht/eindeutig, AK-20).
+- **Eingaben-Dialog (AK-18):** Menüeintrag `inputs`; Formular hat die Gruppen mit `hilfe` eingeklappt; Speichern ändert
+  Parameter und Sensor sofort ohne Neuberechnung und speichert keine Anzeigefelder; Übersetzungstest: jedes
+  `NUMBER_PARAMS`-Feld hat in `de`/`en` genau ein Feldlabel und einen Hilfeeintrag (`**Label**`), Quellsensoren und
+  Tarifzeiten-Felder haben `data_description`.
 - **Mehrere Instanzen (AK-20, AK-21):** zwei Entries mit unterschiedlichen Quellen/Eingaben/Tarifzeiten → eigene
   Entitäten, unabhängige Ergebnisse, Entladen der einen lässt die andere unverändert; Läufe zweier Instanzen
   überlappen nie (Nebenläufigkeits-Zähler), die wartende Instanz rechnet danach genau einmal.

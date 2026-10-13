@@ -181,9 +181,18 @@ und sind **Beispielwerte**. Wer einen anderen Netzbetreiber oder Tarif hat, trä
 
 **Hilfe zu jedem Eingabefeld:** Wer unsicher ist, bekommt dort, wo er das Feld pflegt, eine Detailhilfe
 mit drei Angaben: (1) **wozu** das Feld dient bzw. wie es in die Rechnung eingeht, (2) **was** einzutragen
-ist (Einheit, brutto/netto, typischer Bereich, Beispiel), (3) **woher** der Wert kommt (z. B. Preisblatt
-des Netzbetreibers, Stromrechnung, Datenblatt des Speichers, Vertrag). Das gilt für alle Zahlenfelder, die
-Tarifzeiten (§7) und die Quellsensoren. Die Hilfetexte sind Deutsch und Englisch verfügbar.
+ist (Einheit, brutto/netto, Beispiel), (3) **woher** der Wert kommt (z. B. Preisblatt des Netzbetreibers,
+Stromrechnung, Datenblatt des Speichers, Vertrag). Der Laie soll dafür nie in einer Doku oder README nachschlagen
+müssen; der geübte Nutzer soll nicht gestört werden und keinen Platz verlieren:
+
+- Die Zahleneingaben (§8) lassen sich im Optionsdialog unter **„Eingaben bearbeiten“** pflegen, gegliedert nach
+  Themen (Netzentgelt, Strompreis und Tarife, Speicher, Netzanschluss). Ganz oben steht ein **eingeklappter
+  Hilfeblock** („Hilfe zu den Feldern“) mit Wozu/Was/Woher je Feld; die Felder selbst bleiben kompakt.
+- Die Tarifzeiten (§7) und die Quellsensoren haben eine kurze Beschreibung direkt am Feld.
+- Die Zahlen-Entitäten bleiben für schnelles Ändern im Dashboard bestehen (für geübte Nutzer); beide Wege
+  ändern dieselben Werte. Home Assistant bietet an Entitäten keine Feldhilfe und in Formularen keine
+  aufklappbaren Hilfe-Symbole je Feld; deshalb der eingeklappte Block.
+- Die Hilfetexte sind Deutsch und Englisch verfügbar.
 
 Datenquellen (konfigurierbar im Einrichtungsdialog): Bezugszähler, Einspeisezähler, Börsenpreis-Sensor.
 
@@ -255,8 +264,10 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
   (Golden-Test).
 - **AK-17** Gespeicherte Quartals-Zeitfenster aus Version 1.0.0 werden verlustfrei in Tarifzeiten
   umgewandelt; veraltete Zeitfenster-Entitäten werden entfernt.
-- **AK-18** Zu jedem Eingabefeld (§8, §7, Quellsensoren) gibt es eine Detailhilfe mit Zweck, einzutragendem Wert
-  und Bezugsquelle in Deutsch und Englisch; ein Test stellt sicher, dass kein Feld ohne Hilfetext existiert.
+- **AK-18** Zu jedem Eingabefeld gibt es eine Detailhilfe mit Zweck, einzutragendem Wert und Bezugsquelle in Deutsch
+  und Englisch: im Dialog „Eingaben bearbeiten“ je Zahlenfeld (§8) in einem eingeklappten Hilfeblock, an Tarifzeiten
+  und Quellsensoren als Feldbeschreibung. Der Dialog speichert die Werte wie die Zahlen-Entitäten (kein Neurechnen,
+  der Netzentgelt-Sensor aktualisiert sofort); Test: kein Zahlenfeld ohne Hilfetext in beiden Sprachen.
 - **AK-19** Mit `grid_import_kw = grid_export_kw = 0` sind alle Ergebnisse identisch zu denen ohne
   Netzanschlussbegrenzung (Golden-Test); mit Begrenzung hält jeder optimierte Tag in jeder Stunde Bezug und
   Einspeisung innerhalb der Grenzen, und die Ersparnis ist nie größer als ohne Begrenzung. Die Tages-DP
@@ -279,8 +290,5 @@ Deutsch/Englisch hinaus; kein Kopieren oder Vergleichen von Instanzen in der Obe
 - **F-6** Ist `feedin` = 6,29 ct der tatsächliche anzulegende Wert? (Teileinspeisung, 23,8 kWp.)
 - **F-7** Soll die Auswertung später auch den **Ist-Betrieb** (Modul 3 aktiv) gegen die Prognose
   vergleichen? (Dann zusätzliche Kennzahlen.)
-- **F-8** Wie zeigt die Oberfläche die Hilfe (AK-18) an? Kandidaten: Beschreibung im Optionsdialog
-  (Feld-Hilfetexte), zusätzliches Attribut `hilfe` je Zahlenentität, mitgelieferte Markdown-Karte im
-  Dashboard-Beispiel. Home Assistant zeigt an Zahlenentitäten selbst keine Feldbeschreibung an.
 - **F-9** Soll später auch eine Begrenzung nach §14a (z. B. Dimmung steuerbarer Verbrauchseinrichtungen auf
   4,2 kW) modelliert werden? Heute: nein, nur Netzanschlussleistung (§6 4a).
