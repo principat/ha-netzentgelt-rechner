@@ -199,3 +199,29 @@ def test_ui_6_device_page_shows_inputs_and_sensors(browser, ui_ids, ha):  # AK-1
     page.get_by_text("Netzentgelt Modul 3").first.wait_for()
     shot(page, "08-device", "de")
     page.context.close()
+
+
+def test_ui_7_help_switch_is_remembered_for_all_topics(browser, ui_ids):  # AK-23
+    lang = "de"
+    page = open_page(browser, lang, f"/config/integrations/integration/{DOMAIN}")
+    open_options_menu(page, lang)
+    page.get_by_text(tr(lang, "options.step.init.menu_options.netzentgelt")).click()
+    help_title = tr(lang, "options.step.netzentgelt.sections.hilfe.name")
+    page.get_by_text(help_title).click()
+    switch_label = tr(lang, "options.step.netzentgelt.sections.hilfe.data.help")
+    page.get_by_text(switch_label).first.wait_for()
+    page.locator("ha-switch").first.click()
+    page.get_by_text(HA_TEXT[lang]["submit"], exact=True).click()
+    page.get_by_text(tr(lang, "options.step.init.menu_options.speicher")).click()  # another topic
+    why = page.get_by_text(re.compile(r"Wozu:")).first
+    why.wait_for(state="visible")  # opened expanded without a click
+    page.wait_for_timeout(800)
+    shot(page, "09-help-remembered", lang)
+    # switch it off again so the other tests start from the default
+    page.locator("ha-switch").first.click()
+    page.get_by_text(HA_TEXT[lang]["submit"], exact=True).click()
+    page.get_by_text(tr(lang, "options.step.init.menu_options.tarife")).click()
+    page.get_by_text(tr(lang, "options.step.tarife.sections.hilfe.name")).wait_for()
+    page.wait_for_timeout(800)
+    assert not page.get_by_text(re.compile(r"Wozu:")).first.is_visible()
+    page.context.close()

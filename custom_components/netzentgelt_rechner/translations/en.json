@@ -50,9 +50,9 @@
         },
         "sections": {
           "hilfe": {
-            "name": "Help for the fields (expand)",
+            "name": "Help for the fields",
             "data": {
-              "help": "Why, what to enter, where from?"
+              "help": "Show this help expanded next time"
             },
             "data_description": {
               "help": "**Grid fee standard stage (gross)** – Why: Grid fee outside the high and low tariff times; also the base of the dynamic tariff. Enter: ct/kWh gross (incl. VAT). Source: Grid fee price sheet of your grid operator, standard energy price.\n\n**Grid fee low tariff (gross)** – Why: Energy price of the grid fee during the low tariff times of module 3. Enter: ct/kWh gross. Source: Price sheet for time-variable grid fees of your grid operator.\n\n**Grid fee high tariff (gross)** – Why: Energy price of the grid fee during the high tariff times of module 3. Enter: ct/kWh gross. Source: Price sheet for time-variable grid fees of your grid operator.\n\n**Module 1 flat rebate** – Why: Flat reduction of the grid fee for controllable consumers (module 1); a prerequisite for module 3. Enter: EUR per year gross. Source: Price sheet of your grid operator (§14a, module 1) or your notice.\n\n**Extra base price module 3** – Why: Extra yearly cost of module 3 compared to today, e.g. a higher metering fee. Enter: EUR per year; 0 if no extra cost is known. Source: Grid operator or metering point operator."
@@ -76,9 +76,9 @@
         },
         "sections": {
           "hilfe": {
-            "name": "Help for the fields (expand)",
+            "name": "Help for the fields",
             "data": {
-              "help": "Why, what to enter, where from?"
+              "help": "Show this help expanded next time"
             },
             "data_description": {
               "help": "**Spot price (net, day-ahead)** – Why: Provides the hourly spot price for the scenarios with a dynamic tariff. Enter: A sensor with the day-ahead spot price in EUR/kWh **net** (not the end-customer price) and at least 12 months of long-term statistics. Source: Integration of your spot price provider (e.g. EPEX Spot) in Home Assistant.\n\n**Current energy price (gross)** – Why: Your current electricity price; the reference all savings are calculated against. Enter: Energy price in ct/kWh gross, all included (energy, grid fee, levies, taxes). Source: Your electricity bill or supply contract.\n\n**Levies and taxes (gross)** – Why: Part of the price that does not depend on the tariff (concession fee, levies, electricity tax). Enter: Sum in ct/kWh gross. Source: Breakdown on your electricity bill or your supplier's price sheet.\n\n**VAT** – Why: Added to the energy price of the dynamic tariff. Enter: Percent, currently 19 in Germany. Source: Legal rate or your electricity bill.\n\n**Dynamic tariff markup (net)** – Why: Surcharge of your supplier on the spot price in the dynamic tariff. Enter: ct/kWh net. Source: Price sheet or contract of the dynamic tariff.\n\n**Extra base fee dynamic tariff** – Why: Additional base fee of the dynamic tariff compared to today. Enter: EUR per year; 0 if equal. Source: Price sheet or contract of the dynamic tariff.\n\n**Feed-in tariff** – Why: Revenue for exported power; also the value of surplus that stays in the battery instead of going to the grid. Enter: ct/kWh. Source: Feed-in contract, statement of the grid operator, or the applicable value under direct marketing."
@@ -99,9 +99,9 @@
         },
         "sections": {
           "hilfe": {
-            "name": "Help for the fields (expand)",
+            "name": "Help for the fields",
             "data": {
-              "help": "Why, what to enter, where from?"
+              "help": "Show this help expanded next time"
             },
             "data_description": {
               "help": "**Usable storage capacity (existing)** – Why: Capacity of your battery that the optimisation may use. Enter: kWh actually usable, i.e. without reserve and manufacturer limits (e.g. 15 kWh gross × 0.9). Source: Data sheet or app of your battery.\n\n**Usable capacity of the storage expansion** – Why: Additional usable capacity of a planned expansion; used to answer whether more storage pays off. Enter: kWh usable; 0 if no expansion is planned. Source: Quote or data sheet of the expansion.\n\n**Battery charge/discharge power** – Why: How much power the battery can charge or discharge per hour; limits how much energy can be shifted in one cheap hour. Enter: kW (charge or discharge power; if they differ, the smaller one). Source: Data sheet of the battery or inverter.\n\n**Additional charge/discharge power of the expansion** – Why: Additional power from the expansion, e.g. with its own inverter. Enter: kW; 0 if the expansion uses the same inverter and only adds capacity. Source: Quote or data sheet of the expansion.\n\n**Cost of storage expansion** – Why: Cost of the expansion; the payback time is derived from it. Enter: Euro. Source: Quote from your installer.\n\n**Storage efficiency (charge and discharge)** – Why: Losses when charging and discharging combined. Enter: Percent (round trip), typically about 85 to 92. Source: Data sheet of the battery.\n\n**Storage wear cost** – Why: Wear of the battery per kWh charged or discharged; keeps the optimisation from needless cycles. Enter: ct/kWh; 0 is a good assumption when unsure. Source: Estimate: purchase price ÷ (cycles × capacity)."
@@ -123,9 +123,9 @@
         },
         "sections": {
           "hilfe": {
-            "name": "Help for the fields (expand)",
+            "name": "Help for the fields",
             "data": {
-              "help": "Why, what to enter, where from?"
+              "help": "Show this help expanded next time"
             },
             "data_description": {
               "help": "**Meter reading import** – Why: Your measured grid import per hour is the basis of all savings. Enter: Meter reading of the grid import in kWh (only increases), with long-term statistics. Source: Your electricity meter or energy monitor in Home Assistant (energy dashboard).\n\n**Meter reading export** – Why: Your measured grid export per hour: surplus the battery can absorb. Enter: Meter reading of the grid export in kWh (only increases), with long-term statistics. Source: Your electricity meter or energy monitor in Home Assistant (energy dashboard).\n\n**Grid connection: maximum import power (0 = unlimited)** – Why: The battery together with the household must not draw more from the grid than the connection allows. Enter: kW; 0 = unlimited. Source: Main fuse (e.g. 3 × 35 A ≈ 24 kW) or grid connection contract.\n\n**Grid connection: maximum export power (0 = unlimited)** – Why: The battery must not export more to the grid than allowed. Enter: kW; 0 = unlimited. Source: Plant registration or requirement of the grid operator (possibly an export limit)."

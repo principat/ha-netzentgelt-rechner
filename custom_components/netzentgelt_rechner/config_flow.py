@@ -173,9 +173,12 @@ def _window_schema(defaults: dict[str, Any]) -> vol.Schema:
 
 
 def _topic_schema(
-    topic: str, params: dict[str, float] | None, sources: dict[str, Any]
+    topic: str,
+    params: dict[str, float] | None,
+    sources: dict[str, Any],
+    help_expanded: bool = False,
 ) -> vol.Schema:
-    """A topic form: collapsed help block, the topic's sensors, then its number inputs."""
+    """A topic form: help block, the topic's sensors, then its number inputs."""
 
     def number(key: str) -> NumberSelector:
         _, unit, low, high, step, _ = NUMBER_PARAMS[key]
@@ -189,8 +192,11 @@ def _topic_schema(
             )
         )
 
-    # display-only field: its translated data_description is the help Markdown
-    help_block = section(vol.Schema({vol.Optional("help"): BooleanSelector()}), {"collapsed": True})
+    # the switch "show help expanded next time" (AK-23) carries the help Markdown as its description
+    help_block = section(
+        vol.Schema({vol.Optional("help", default=help_expanded): BooleanSelector()}),
+        {"collapsed": not help_expanded},
+    )
     fields: dict[Any, Any] = {vol.Optional("hilfe"): help_block}
     sensor = EntitySelector(EntitySelectorConfig(domain="sensor"))
     for key in TOPIC_SOURCES.get(topic, ()):
@@ -267,6 +273,8 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
             if not errors:
                 if hub is not None:
                     hub.async_set_params({k: float(user_input[k]) for k in TOPICS[topic]})
+                    shown = user_input.get("hilfe", {}).get("help", hub.help_expanded)
+                    hub.async_set_help_expanded(bool(shown))
                 if any(sources.get(k) != v for k, v in chosen.items()):
                     # new sensors: store them as options; the entry reloads (data saved on unload)
                     return self.async_create_entry(
@@ -277,7 +285,9 @@ class NetzentgeltOptionsFlow(OptionsFlowWithReload):
         params = None if hub is None else {**hub.params, **(user_input or {})}
         return self.async_show_form(
             step_id=topic,
-            data_schema=_topic_schema(topic, params, sources),
+            data_schema=_topic_schema(
+                topic, params, sources, hub.help_expanded if hub is not None else False
+            ),
             errors=errors,
         )
 

@@ -59,6 +59,7 @@ class Hub:
         )
         self.params: dict[str, float] = {k: v[5] for k, v in NUMBER_PARAMS.items()}
         self.windows: list[calc.TariffWindow] = calc.default_windows(dt_util.now().year)
+        self.help_expanded = False  # options dialog: open the help blocks expanded (AK-23)
         self.results: dict[str, Any] | None = None
         self.status = STATUS_NONE
         self.error: str | None = None
@@ -94,6 +95,9 @@ class Hub:
         windows = self._parse_windows(stored.get("windows"))
         if windows is not None:
             self.windows = windows
+        ui = stored.get("ui")
+        if isinstance(ui, dict) and isinstance(ui.get("help_expanded"), bool):
+            self.help_expanded = ui["help_expanded"]
         self.results = stored.get("results")
         self.error = stored.get("error")
         status = stored.get("status", STATUS_NONE)
@@ -138,6 +142,7 @@ class Hub:
         return {
             "params": self.params,
             "windows": [w.to_dict() for w in self.windows],
+            "ui": {"help_expanded": self.help_expanded},
             "results": self.results,
             "status": self.status,
             "error": self.error,
@@ -182,6 +187,12 @@ class Hub:
         self.params.update({k: float(v) for k, v in values.items()})
         self._schedule_save()
         self._notify()
+
+    @callback
+    def async_set_help_expanded(self, value: bool) -> None:
+        """Remember whether the help blocks open expanded (AK-23); no entity, no recalculation."""
+        self.help_expanded = value
+        self._schedule_save()
 
     @callback
     def async_set_windows(self, windows: list[calc.TariffWindow]) -> None:

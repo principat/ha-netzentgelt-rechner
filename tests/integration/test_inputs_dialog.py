@@ -125,3 +125,65 @@ async def test_power_already_present_is_kept(hass, entry, hass_storage):  # AK-2
     await setup_entry(hass, entry)
     assert entry.runtime_data.params["power_kw"] == 3.0
     assert entry.runtime_data.params["extra_power_kw"] == 7.2  # untouched default
+
+
+def _hilfe(form: dict):
+    return next(v for k, v in form["data_schema"].schema.items() if k.schema == "hilfe")
+
+
+async def test_help_switch_opens_the_help_in_all_topics(hass, entry, hass_storage):  # AK-23
+    await setup_entry(hass, entry)
+    hub = entry.runtime_data
+    form = await _open(hass, entry, "netzentgelt")
+    help_field = next(iter(_hilfe(form).schema.schema))
+    assert help_field.default() is False  # off by default, help collapsed
+    done = await hass.config_entries.options.async_configure(
+        form["flow_id"], _defaults(form) | {"hilfe": {"help": True}}
+    )
+    assert done["type"] is FlowResultType.MENU
+    assert hub.help_expanded is True
+    assert hub.status == "nicht_berechnet"  # no recalculation
+    for topic in TOPICS:  # the same setting for every topic
+        other = await _open(hass, entry, topic)
+        assert _hilfe(other).options == {"collapsed": False}
+        assert next(iter(_hilfe(other).schema.schema)).default() is True
+    # survives a restart, is no entity
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass_storage[f"{DOMAIN}.{ENTRY_ID}"]["data"]["ui"] == {"help_expanded": True}
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.runtime_data.help_expanded is True
+    registry = er.async_get(hass)
+    assert not [
+        e for e in er.async_entries_for_config_entry(registry, ENTRY_ID) if "help" in e.unique_id
+    ]
+
+
+async def test_help_switch_off_collapses_again(hass, entry):  # AK-23
+    await setup_entry(hass, entry)
+    hub = entry.runtime_data
+    hub.async_set_help_expanded(True)
+    form = await _open(hass, entry, "speicher")
+    await hass.config_entries.options.async_configure(
+        form["flow_id"], _defaults(form) | {"hilfe": {"help": False}}
+    )
+    assert hub.help_expanded is False
+    again = await _open(hass, entry, "speicher")
+    assert _hilfe(again).options == {"collapsed": True}
+
+
+async def test_without_help_value_the_setting_is_kept(hass, entry):  # AK-23
+    await setup_entry(hass, entry)
+    hub = entry.runtime_data
+    hub.async_set_help_expanded(True)
+    form = await _open(hass, entry, "netzentgelt")
+    await hass.config_entries.options.async_configure(form["flow_id"], _defaults(form))
+    assert hub.help_expanded is True
+
+
+@pytest.mark.parametrize("raw", [None, "x", {"help_expanded": "yes"}])
+async def test_bad_stored_ui_setting_is_ignored(hass, entry, hass_storage, raw):  # AK-23
+    hass_storage[f"{DOMAIN}.{ENTRY_ID}"] = stored(None, ui=raw)
+    await setup_entry(hass, entry)
+    assert entry.runtime_data.help_expanded is False
